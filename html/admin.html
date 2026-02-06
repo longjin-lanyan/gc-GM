@@ -22,10 +22,13 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 16px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
 
         h1 {
@@ -110,13 +113,13 @@
         }
 
         .command-table th {
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.35);
             color: #333;
             font-weight: bold;
         }
 
         .command-table tr:hover {
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.25);
         }
 
         .status-badge {
@@ -205,7 +208,10 @@
         }
 
         .modal-content {
-            background: white;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 12px;
             padding: 30px;
             max-width: 600px;
