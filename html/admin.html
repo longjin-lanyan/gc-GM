@@ -304,6 +304,19 @@
         .back-link:hover {
             text-decoration: underline;
         }
+
+        /* 安卓兼容性：不支持 backdrop-filter 时使用更高不透明度背景 */
+        @supports not (backdrop-filter: blur(1px)) {
+            .container {
+                background: rgba(255, 255, 255, 0.88);
+            }
+            .modal-content {
+                background: rgba(255, 255, 255, 0.92);
+            }
+            .command-table th {
+                background: rgba(248, 249, 250, 0.9);
+            }
+        }
     </style>
 </head>
 <body>

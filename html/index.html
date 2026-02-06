@@ -172,7 +172,7 @@
         }
 
         .command-text {
-            background: #fff;
+            background: rgba(255, 255, 255, 0.45);
             padding: 12px;
             border-radius: 5px;
             font-family: 'Courier New', monospace;
@@ -311,10 +311,10 @@
         .select-input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.4);
             border-radius: 8px;
             font-size: 16px;
-            background: white;
+            background: rgba(255, 255, 255, 0.5);
             cursor: pointer;
             transition: all 0.3s;
             display: flex;
@@ -444,8 +444,8 @@
         /* 面板底部按钮 */
         .panel-footer {
             padding: 15px;
-            background: #f8f9fa;
-            border-top: 1px solid #e0e0e0;
+            background: rgba(255, 255, 255, 0.35);
+            border-top: 1px solid rgba(102, 126, 234, 0.15);
             display: flex;
             gap: 10px;
         }
@@ -550,7 +550,7 @@
             justify-content: space-between;
             align-items: center;
             padding-top: 12px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid rgba(102, 126, 234, 0.15);
         }
 
         .command-card-info {
@@ -575,8 +575,8 @@
         }
 
         .like-btn {
-            background: #fff;
-            border: 1px solid #667eea !important;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(102, 126, 234, 0.4) !important;
             color: #667eea;
         }
 
@@ -608,12 +608,13 @@
         .upload-form textarea {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            border: 1px solid rgba(102, 126, 234, 0.25);
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
             resize: vertical;
             transition: border-color 0.3s;
+            background: rgba(255, 255, 255, 0.5);
         }
 
         .upload-form textarea:focus {
@@ -624,11 +625,12 @@
         .upload-form select {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            border: 1px solid rgba(102, 126, 234, 0.25);
             border-radius: 8px;
             font-size: 14px;
             cursor: pointer;
             transition: border-color 0.3s;
+            background: rgba(255, 255, 255, 0.5);
         }
 
         .upload-form select:focus {
@@ -866,11 +868,12 @@
         .add-uid-form input {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #ddd;
+            border: 1px solid rgba(102, 126, 234, 0.25);
             border-radius: 8px;
             font-size: 16px;
             margin-bottom: 12px;
             transition: border-color 0.2s;
+            background: rgba(255, 255, 255, 0.5);
         }
 
         .add-uid-form input:focus {
@@ -996,6 +999,43 @@
                 padding: 20px;
             }
         }
+
+        /* 安卓兼容性：不支持 backdrop-filter 时使用更高不透明度背景 */
+        @supports not (backdrop-filter: blur(1px)) {
+            .container {
+                background: rgba(255, 255, 255, 0.88);
+            }
+            .status-indicator {
+                background: rgba(255, 255, 255, 0.88);
+            }
+            .select-panel-content {
+                background: rgba(255, 255, 255, 0.92);
+            }
+            .settings-panel-content {
+                background: rgba(255, 255, 255, 0.92);
+            }
+            .command-card {
+                background: rgba(255, 255, 255, 0.85);
+            }
+            .upload-form {
+                background: rgba(255, 255, 255, 0.85);
+            }
+            .sub-btn {
+                background: rgba(255, 255, 255, 0.8);
+            }
+            .uid-item {
+                background: rgba(255, 255, 255, 0.75);
+            }
+            .add-uid-form {
+                background: rgba(255, 255, 255, 0.7);
+            }
+            .panel-search-header {
+                background: rgba(255, 255, 255, 0.92);
+            }
+            .result-box {
+                background: rgba(255, 255, 255, 0.8);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1016,7 +1056,7 @@
             <span class="status-label">在线:</span>
             <span id="online-count" class="status-value">0人</span>
         </div>
-        <div class="status-item" id="current-uid-indicator" style="margin-top: 5px; padding-top: 8px; border-top: 1px solid #eee;">
+        <div class="status-item" id="current-uid-indicator" style="margin-top: 5px; padding-top: 8px; border-top: 1px solid rgba(102, 126, 234, 0.15);">
             <span class="status-label">UID:</span>
             <span id="current-uid-display" class="status-value" style="color: #667eea; font-weight: 600;">未选择</span>
         </div>
@@ -1136,7 +1176,7 @@
             <!-- 圣遗物专用选择框 -->
             <div class="form-group" id="artifact-build-group" style="display: none;">
                 <label>选择构建套装：</label>
-                <select id="artifact-build-select" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                <select id="artifact-build-select" style="width: 100%; padding: 12px; border: 1px solid rgba(102, 126, 234, 0.25); border-radius: 8px; font-size: 16px; background: rgba(255, 255, 255, 0.5);">
                     <option value="">请选择构建套装...</option>
                     <optgroup label="元素DPS套装">
                         <option value="crimson">Crimson - 火套DPS</option>
@@ -1193,7 +1233,7 @@
 
             <div class="form-group">
                 <label>输入指令：</label>
-                <textarea id="custom-command-input" rows="4" placeholder="例如: give 201 x999&#10;或: tp 2000 300 -1000&#10;或: unlockall&#10;&#10;注意：不要包含UID，系统会自动添加" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; font-family: monospace; resize: vertical;"></textarea>
+                <textarea id="custom-command-input" rows="4" placeholder="例如: give 201 x999&#10;或: tp 2000 300 -1000&#10;或: unlockall&#10;&#10;注意：不要包含UID，系统会自动添加" style="width: 100%; padding: 12px; border: 1px solid rgba(102, 126, 234, 0.25); border-radius: 8px; font-size: 16px; font-family: monospace; resize: vertical; background: rgba(255, 255, 255, 0.5);"></textarea>
             </div>
 
             <div style="display: flex; gap: 10px;">
