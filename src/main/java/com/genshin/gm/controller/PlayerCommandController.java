@@ -7,7 +7,6 @@ import com.genshin.gm.model.PlayerCommand;
 import com.genshin.gm.service.GrasscutterService;
 import com.genshin.gm.service.PlayerCommandService;
 import com.genshin.gm.service.UserService;
-import com.genshin.gm.service.VerificationService;
 import com.genshin.gm.util.CommandProcessor;
 import com.genshin.gm.util.SecurityLogger;
 import org.slf4j.Logger;
@@ -39,9 +38,6 @@ public class PlayerCommandController {
     private GrasscutterService grasscutterService;
 
     @Autowired
-    private VerificationService verificationService;
-
-    @Autowired
     private UserService userService;
 
     /**
@@ -63,10 +59,9 @@ public class PlayerCommandController {
     }
 
     /**
-     * 严格验证UID归属权
-     * 1. 如果有sessionToken → 验证UID是否绑定到该用户账户
-     * 2. 如果没有sessionToken → 检查临时验证状态
-     * 3. 如果UID不属于该用户 → 记录到 errohuman.txt
+     * 严格验证UID归属权（仅永久验证）
+     * 必须：已登录 + UID已绑定到该账户
+     * 不满足条件 → 拒绝并记录到 errohuman.txt
      *
      * @return null 表示验证通过，否则返回错误信息Map
      */
@@ -74,56 +69,45 @@ public class PlayerCommandController {
                                                       String command, HttpServletRequest request) {
         String clientIp = getClientIp(request);
 
-        // 情况1：有sessionToken（已登录用户）
-        if (sessionToken != null && !sessionToken.trim().isEmpty()) {
-            String username = userService.validateSession(sessionToken);
-
-            if (username == null) {
-                // session无效/过期
-                SecurityLogger.logAction(clientIp, null, uid, "SESSION_INVALID",
-                        "使用无效sessionToken尝试执行指令");
-                Map<String, Object> err = new HashMap<>();
-                err.put("success", false);
-                err.put("message", "登录已过期，请重新登录");
-                return err;
-            }
-
-            // 检查UID是否绑定到该用户
-            if (userService.isUidVerified(username, uid)) {
-                // 验证通过
-                SecurityLogger.logAction(clientIp, username, uid, "EXECUTE_CMD",
-                        "永久绑定验证通过, 指令: " + (command != null ? command : "预设指令"));
-                return null;
-            }
-
-            // UID未绑定到该用户 → 安全事件！
-            String boundUids = userService.getVerifiedUidsString(username);
-            SecurityLogger.logUnauthorizedUidAttempt(
-                    clientIp, username, boundUids, uid, command,
-                    "已登录用户尝试操作非绑定UID，疑似提权攻击"
-            );
-
+        // 必须提供sessionToken（必须登录）
+        if (sessionToken == null || sessionToken.trim().isEmpty()) {
+            SecurityLogger.logAction(clientIp, null, uid, "NO_LOGIN",
+                    "未登录尝试执行指令: " + (command != null ? command : "预设指令"));
             Map<String, Object> err = new HashMap<>();
             err.put("success", false);
-            err.put("message", "该UID未绑定到您的账户，无法执行操作");
+            err.put("message", "请先登录账户并绑定UID后再执行操作");
+            err.put("needLogin", true);
             return err;
         }
 
-        // 情况2：无sessionToken（未登录用户），使用临时验证
-        boolean tempVerified = verificationService.isVerified(uid);
-        if (tempVerified) {
-            SecurityLogger.logAction(clientIp, null, uid, "EXECUTE_CMD",
-                    "临时验证通过, 指令: " + (command != null ? command : "预设指令"));
+        String username = userService.validateSession(sessionToken);
+
+        if (username == null) {
+            SecurityLogger.logAction(clientIp, null, uid, "SESSION_INVALID",
+                    "使用无效sessionToken尝试执行指令");
+            Map<String, Object> err = new HashMap<>();
+            err.put("success", false);
+            err.put("message", "登录已过期，请重新登录");
+            return err;
+        }
+
+        // 检查UID是否绑定到该用户
+        if (userService.isUidVerified(username, uid)) {
+            SecurityLogger.logAction(clientIp, username, uid, "AUTH_OK",
+                    "鉴权通过, 指令: " + (command != null ? command : "预设指令"));
             return null;
         }
 
-        // 未验证
-        SecurityLogger.logAction(clientIp, null, uid, "UNVERIFIED",
-                "未验证UID尝试执行指令");
+        // UID未绑定到该用户 → 安全事件！
+        String boundUids = userService.getVerifiedUidsString(username);
+        SecurityLogger.logUnauthorizedUidAttempt(
+                clientIp, username, boundUids, uid, command,
+                "已登录用户尝试操作非绑定UID，疑似提权攻击"
+        );
+
         Map<String, Object> err = new HashMap<>();
         err.put("success", false);
-        err.put("message", "请先验证您的UID");
-        err.put("needVerification", true);
+        err.put("message", "该UID未绑定到您的账户，无法执行操作");
         return err;
     }
 
@@ -288,8 +272,11 @@ public class PlayerCommandController {
 
             // 使用智能处理器处理指令，自动添加UID
             String finalCommand = CommandProcessor.processCommand(command.getCommand(), uid);
+            String clientIp = getClientIp(request);
 
             logger.info("执行指令 - UID: {} (已验证), 原始: {}, 处理后: {}", uid, command.getCommand(), finalCommand);
+            SecurityLogger.logAction(clientIp, null, uid, "CMD_SEND",
+                    "发送预设指令到GC: " + finalCommand);
 
             // 验证通过后，使用控制台token执行指令
             OpenCommandResponse result = grasscutterService.executeConsoleCommand(
@@ -309,18 +296,23 @@ public class PlayerCommandController {
                     response.put("message", "指令格式错误");
                     response.put("data", resultData);
                     response.put("debug", "处理后的指令: " + finalCommand);
+                    SecurityLogger.logAction(clientIp, null, uid, "CMD_FORMAT_ERR", finalCommand);
                 } else if (resultData.contains("无权限") || resultData.contains("No permission")) {
                     response.put("success", false);
                     response.put("message", "权限不足（这不应该发生，请检查控制台token配置）");
                     response.put("data", resultData);
+                    SecurityLogger.logAction(clientIp, null, uid, "CMD_PERM_ERR", finalCommand);
                 } else {
                     response.put("success", true);
                     response.put("message", "指令执行成功");
                     response.put("data", resultData);
+                    SecurityLogger.logAction(clientIp, null, uid, "CMD_OK", finalCommand);
                 }
             } else {
                 response.put("success", false);
                 response.put("message", "指令执行失败: " + result.getMessage());
+                SecurityLogger.logAction(clientIp, null, uid, "CMD_FAIL",
+                        "retcode=" + result.getRetcode() + " | " + finalCommand);
             }
 
             return ResponseEntity.ok(response);
@@ -495,7 +487,10 @@ public class PlayerCommandController {
 
             // 4. 处理指令（添加UID）
             String finalCommand = CommandProcessor.processCommand(command, uid);
+            String clientIp = getClientIp(request);
             logger.info("执行自定义指令: UID={}, 原始={}, 处理后={}", uid, command, finalCommand);
+            SecurityLogger.logAction(clientIp, null, uid, "CUSTOM_CMD_SEND",
+                    "发送自定义指令到GC: " + finalCommand);
 
             // 5. 使用控制台token执行指令
             AppConfig.GrasscutterConfig gcConfig = ConfigLoader.getConfig().getGrasscutter();
@@ -512,11 +507,14 @@ public class PlayerCommandController {
                 response.put("data", resultData);
                 response.put("message", "指令执行成功");
                 logger.info("自定义指令执行成功: UID={}, 指令={}", uid, finalCommand);
+                SecurityLogger.logAction(clientIp, null, uid, "CUSTOM_CMD_OK", finalCommand);
             } else {
                 response.put("success", false);
                 String errorMsg = result != null ? result.getMessage() : "未知错误";
                 response.put("message", "执行失败: " + errorMsg);
                 logger.error("自定义指令执行失败: UID={}, 指令={}, 错误={}", uid, finalCommand, errorMsg);
+                SecurityLogger.logAction(clientIp, null, uid, "CUSTOM_CMD_FAIL",
+                        "错误: " + errorMsg + " | 指令: " + finalCommand);
             }
 
             return ResponseEntity.ok(response);
