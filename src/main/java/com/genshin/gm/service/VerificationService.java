@@ -22,9 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VerificationService {
     private static final Logger logger = LoggerFactory.getLogger(VerificationService.class);
 
-    // 验证码有效期（分钟）- OpenCommand的验证码验证有效期保持默认（通常60秒）
-    // 前端会在验证成功后维护5分钟的session有效期
-    private static final int EXPIRY_MINUTES = 1;
+    // 验证码发送后的有效期（分钟）- 用户需在此时间内输入验证码
+    private static final int CODE_EXPIRY_MINUTES = 2;
+
+    // 验证成功后的有效期（分钟）- 绑定UID操作需在此时间内完成
+    private static final int VERIFIED_EXPIRY_MINUTES = 10;
 
     // 存储验证信息的Map: UID -> VerificationCode
     private final Map<String, VerificationCode> verificationCodes = new ConcurrentHashMap<>();
@@ -42,7 +44,7 @@ public class VerificationService {
 
         try {
             int uidInt = Integer.parseInt(uid);
-            LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(EXPIRY_MINUTES);
+            LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(CODE_EXPIRY_MINUTES);
 
             // 调用OpenCommand的sendCode API
             String serverUrl = ConfigLoader.getConfig().getGrasscutter().getFullUrl();
@@ -75,7 +77,7 @@ public class VerificationService {
 
                 result.put("success", true);
                 result.put("message", "验证码已发送，请在游戏中查看（4位数字）");
-                result.put("expiryMinutes", EXPIRY_MINUTES);
+                result.put("expiryMinutes", CODE_EXPIRY_MINUTES);
             } else {
                 result.put("success", false);
                 String errorMsg = response != null ? response.getMessage() : "未知错误";
@@ -141,12 +143,13 @@ public class VerificationService {
             );
 
             if (response != null && response.getRetcode() == 200) {
-                // 验证成功，标记为已验证
+                // 验证成功，标记为已验证，并延长过期时间
                 storedInfo.setVerified(true);
+                storedInfo.setExpiryTime(LocalDateTime.now().plusMinutes(VERIFIED_EXPIRY_MINUTES));
                 result.put("success", true);
                 result.put("message", "验证成功");
                 result.put("expiryTime", storedInfo.getExpiryTime().toString());
-                logger.info("UID {} 验证成功", uid);
+                logger.info("UID {} 验证成功，session有效期延长至 {}", uid, storedInfo.getExpiryTime());
             } else {
                 result.put("success", false);
                 String errorMsg = response != null ? response.getMessage() : "未知错误";
@@ -168,9 +171,9 @@ public class VerificationService {
     }
 
     /**
-     * 检查UID是否已验证（不检查过期时间，前端管理5分钟session）
+     * 检查UID是否已验证（后端强制检查过期时间）
      * @param uid 玩家UID
-     * @return 是否已验证
+     * @return 是否已验证且未过期
      */
     public boolean isVerified(String uid) {
         VerificationCode code = verificationCodes.get(uid);
@@ -178,8 +181,13 @@ public class VerificationService {
             return false;
         }
 
-        // 只检查是否已验证，不检查过期时间
-        // 过期时间由前端的5分钟session管理
+        // 后端强制检查过期时间
+        if (code.isExpired()) {
+            verificationCodes.remove(uid);
+            logger.info("UID {} 的临时验证已过期，已清除", uid);
+            return false;
+        }
+
         return code.isVerified();
     }
 
@@ -214,13 +222,17 @@ public class VerificationService {
     }
 
     /**
-     * 获取已验证的token（不检查过期时间，前端管理5分钟session）
+     * 获取已验证的token（后端强制检查过期时间）
      * @param uid 玩家UID
-     * @return token，如果未验证返回null
+     * @return token，如果未验证或已过期返回null
      */
     public String getVerifiedToken(String uid) {
         VerificationCode code = verificationCodes.get(uid);
         if (code == null || !code.isVerified()) {
+            return null;
+        }
+        if (code.isExpired()) {
+            verificationCodes.remove(uid);
             return null;
         }
         return code.getToken();

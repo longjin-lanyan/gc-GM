@@ -4,6 +4,7 @@ import com.genshin.gm.config.AppConfig;
 import com.genshin.gm.config.ConfigLoader;
 import com.genshin.gm.model.OpenCommandRequest;
 import com.genshin.gm.model.OpenCommandResponse;
+import com.genshin.gm.util.SecurityLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,14 +117,29 @@ public class GrasscutterService {
 
     /**
      * 执行命令（控制台模式）
+     * 每条发送到Grasscutter的指令都会写入 all.txt
      */
     public OpenCommandResponse executeConsoleCommand(String serverUrl, String consoleToken, String command) {
         try {
             OpenCommandRequest request = new OpenCommandRequest("command", command);
             request.setToken(consoleToken);
-            return sendRequest(serverUrl, request);
+
+            // 记录到 all.txt：这是实际发送到割草机的指令
+            SecurityLogger.logAction("-", "-", "-", "GC_EXECUTE", command);
+
+            OpenCommandResponse result = sendRequest(serverUrl, request);
+
+            // 记录执行结果
+            String resultStr = (result != null && result.getData() != null) ? result.getData().toString() : "";
+            int retcode = result != null ? result.getRetcode() : -1;
+            SecurityLogger.logAction("-", "-", "-", "GC_RESULT",
+                    "retcode=" + retcode + " | 指令: " + command + " | 结果: " + resultStr);
+
+            return result;
         } catch (Exception e) {
             logger.error("执行控制台命令失败", e);
+            SecurityLogger.logAction("-", "-", "-", "GC_ERROR",
+                    "指令执行异常: " + command + " | 错误: " + e.getMessage());
             OpenCommandResponse response = new OpenCommandResponse();
             response.setRetcode(500);
             response.setMessage("执行失败: " + e.getMessage());

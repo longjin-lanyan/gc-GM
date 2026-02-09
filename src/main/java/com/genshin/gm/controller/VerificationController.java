@@ -1,12 +1,14 @@
 package com.genshin.gm.controller;
 
 import com.genshin.gm.service.VerificationService;
+import com.genshin.gm.util.SecurityLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
@@ -22,11 +24,26 @@ public class VerificationController {
     @Autowired
     private VerificationService verificationService;
 
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
+    }
+
     /**
      * 发送验证码到游戏内邮箱
      */
     @PostMapping("/send")
-    public ResponseEntity<Map<String, Object>> sendCode(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> sendCode(@RequestBody Map<String, String> request,
+                                                         HttpServletRequest httpRequest) {
         String uid = request.get("uid");
 
         if (uid == null || uid.trim().isEmpty()) {
@@ -36,7 +53,9 @@ public class VerificationController {
             ));
         }
 
-        logger.info("收到发送验证码请求: UID={}", uid);
+        String clientIp = getClientIp(httpRequest);
+        logger.info("收到发送验证码请求: UID={}, IP={}", uid, clientIp);
+        SecurityLogger.logAction(clientIp, null, uid, "SEND_CODE", "请求发送验证码");
 
         Map<String, Object> result = verificationService.sendVerificationCode(uid);
         return ResponseEntity.ok(result);
@@ -46,7 +65,8 @@ public class VerificationController {
      * 验证验证码
      */
     @PostMapping("/verify")
-    public ResponseEntity<Map<String, Object>> verifyCode(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> verifyCode(@RequestBody Map<String, String> request,
+                                                           HttpServletRequest httpRequest) {
         String uid = request.get("uid");
         String code = request.get("code");
 
@@ -64,9 +84,19 @@ public class VerificationController {
             ));
         }
 
-        logger.info("收到验证请求: UID={}, Code={}", uid, code);
+        String clientIp = getClientIp(httpRequest);
+        logger.info("收到验证请求: UID={}, Code={}, IP={}", uid, code, clientIp);
 
         Map<String, Object> result = verificationService.verifyCode(uid, code);
+
+        Boolean success = (Boolean) result.get("success");
+        if (Boolean.TRUE.equals(success)) {
+            SecurityLogger.logAction(clientIp, null, uid, "VERIFY_SUCCESS", "验证码验证成功");
+        } else {
+            SecurityLogger.logAction(clientIp, null, uid, "VERIFY_FAIL",
+                    "验证码验证失败: " + result.get("message"));
+        }
+
         return ResponseEntity.ok(result);
     }
 

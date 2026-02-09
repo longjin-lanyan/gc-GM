@@ -225,6 +225,25 @@ public class UserService {
     }
 
     /**
+     * 获取用户绑定的UID列表（字符串形式，用于日志）
+     */
+    public String getVerifiedUidsString(String username) {
+        try {
+            Optional<User> userOpt = userRepository.findByUsername(username);
+            if (!userOpt.isPresent()) {
+                return "用户不存在";
+            }
+            List<String> uids = userOpt.get().getVerifiedUids();
+            if (uids == null || uids.isEmpty()) {
+                return "无绑定UID";
+            }
+            return String.join(", ", uids);
+        } catch (Exception e) {
+            return "获取失败";
+        }
+    }
+
+    /**
      * 检查用户是否已验证某个UID
      */
     public boolean isUidVerified(String username, String uid) {
