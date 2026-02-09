@@ -1,12 +1,15 @@
 package com.genshin.gm.controller;
 
 import com.genshin.gm.service.UserService;
+import com.genshin.gm.service.VerificationService;
+import com.genshin.gm.util.SecurityLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +25,23 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private VerificationService verificationService;
+
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
+    }
 
     /**
      * 用户注册
@@ -81,10 +101,13 @@ public class AuthController {
 
     /**
      * 添加已验证的UID
+     * 安全校验：必须先通过验证码验证该UID，才能绑定到账户
      */
     @PostMapping("/add-uid")
-    public ResponseEntity<Map<String, Object>> addVerifiedUid(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> addVerifiedUid(@RequestBody Map<String, String> body,
+                                                               HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
+        String clientIp = getClientIp(request);
 
         try {
             String sessionToken = body.get("sessionToken");
@@ -97,8 +120,22 @@ public class AuthController {
                 return ResponseEntity.ok(result);
             }
 
+            // 安全校验：该UID必须先通过验证码验证，才能绑定到账户
+            if (!verificationService.isVerified(uid)) {
+                String boundUids = userService.getVerifiedUidsString(username);
+                SecurityLogger.logUnauthorizedUidAttempt(
+                        clientIp, username, boundUids, uid, null,
+                        "尝试绑定未经验证码验证的UID到账户"
+                );
+                result.put("success", false);
+                result.put("message", "该UID尚未通过验证码验证，请先在游戏内完成验证");
+                return ResponseEntity.ok(result);
+            }
+
             boolean success = userService.addVerifiedUid(username, uid);
             if (success) {
+                SecurityLogger.logAction(clientIp, username, uid, "BIND_UID",
+                        "成功绑定UID到账户");
                 result.put("success", true);
                 result.put("message", "UID已添加到您的账户");
             } else {

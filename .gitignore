@@ -37,6 +37,7 @@ Thumbs.db
 
 # Log files
 *.log
+log/
 
 # Package Files
 *.jar

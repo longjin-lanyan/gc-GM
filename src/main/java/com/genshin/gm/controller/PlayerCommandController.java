@@ -9,12 +9,14 @@ import com.genshin.gm.service.PlayerCommandService;
 import com.genshin.gm.service.UserService;
 import com.genshin.gm.service.VerificationService;
 import com.genshin.gm.util.CommandProcessor;
+import com.genshin.gm.util.SecurityLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,36 +45,100 @@ public class PlayerCommandController {
     private UserService userService;
 
     /**
-     * 检查UID是否已验证（检查用户账户或临时验证）
-     * @param sessionToken 用户session token（可选）
-     * @param uid 要检查的UID
-     * @return 是否已验证
+     * 从HttpServletRequest中获取客户端真实IP
      */
-    private boolean isUidVerified(String sessionToken, String uid) {
-        // 1. 检查是否在用户账户的已验证UID列表中（永久验证）
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // X-Forwarded-For 可能包含多个IP，取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
+    }
+
+    /**
+     * 严格验证UID归属权
+     * 1. 如果有sessionToken → 验证UID是否绑定到该用户账户
+     * 2. 如果没有sessionToken → 检查临时验证状态
+     * 3. 如果UID不属于该用户 → 记录到 errohuman.txt
+     *
+     * @return null 表示验证通过，否则返回错误信息Map
+     */
+    private Map<String, Object> validateUidOwnership(String sessionToken, String uid,
+                                                      String command, HttpServletRequest request) {
+        String clientIp = getClientIp(request);
+
+        // 情况1：有sessionToken（已登录用户）
         if (sessionToken != null && !sessionToken.trim().isEmpty()) {
             String username = userService.validateSession(sessionToken);
-            if (username != null && userService.isUidVerified(username, uid)) {
-                logger.debug("UID {} 已在用户 {} 的账户中验证", uid, username);
-                return true;
+
+            if (username == null) {
+                // session无效/过期
+                SecurityLogger.logAction(clientIp, null, uid, "SESSION_INVALID",
+                        "使用无效sessionToken尝试执行指令");
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("message", "登录已过期，请重新登录");
+                return err;
             }
+
+            // 检查UID是否绑定到该用户
+            if (userService.isUidVerified(username, uid)) {
+                // 验证通过
+                SecurityLogger.logAction(clientIp, username, uid, "EXECUTE_CMD",
+                        "永久绑定验证通过, 指令: " + (command != null ? command : "预设指令"));
+                return null;
+            }
+
+            // UID未绑定到该用户 → 安全事件！
+            String boundUids = userService.getVerifiedUidsString(username);
+            SecurityLogger.logUnauthorizedUidAttempt(
+                    clientIp, username, boundUids, uid, command,
+                    "已登录用户尝试操作非绑定UID，疑似提权攻击"
+            );
+
+            Map<String, Object> err = new HashMap<>();
+            err.put("success", false);
+            err.put("message", "该UID未绑定到您的账户，无法执行操作");
+            return err;
         }
 
-        // 2. 检查临时验证状态（5分钟有效期）
+        // 情况2：无sessionToken（未登录用户），使用临时验证
         boolean tempVerified = verificationService.isVerified(uid);
         if (tempVerified) {
-            logger.debug("UID {} 通过临时验证", uid);
+            SecurityLogger.logAction(clientIp, null, uid, "EXECUTE_CMD",
+                    "临时验证通过, 指令: " + (command != null ? command : "预设指令"));
+            return null;
         }
-        return tempVerified;
+
+        // 未验证
+        SecurityLogger.logAction(clientIp, null, uid, "UNVERIFIED",
+                "未验证UID尝试执行指令");
+        Map<String, Object> err = new HashMap<>();
+        err.put("success", false);
+        err.put("message", "请先验证您的UID");
+        err.put("needVerification", true);
+        return err;
     }
 
     /**
      * 提交新指令
      */
     @PostMapping("/submit")
-    public ResponseEntity<Map<String, Object>> submitCommand(@RequestBody PlayerCommand command) {
+    public ResponseEntity<Map<String, Object>> submitCommand(@RequestBody PlayerCommand command,
+                                                              HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
         try {
+            String clientIp = getClientIp(request);
+            SecurityLogger.logAction(clientIp, null, null, "SUBMIT_CMD",
+                    "提交指令: " + command.getCommand());
+
             // 验证指令格式
             String validationError = CommandProcessor.validateCommand(command.getCommand());
             if (validationError != null) {
@@ -177,7 +243,8 @@ public class PlayerCommandController {
     @PostMapping("/{id}/execute")
     public ResponseEntity<Map<String, Object>> executeCommand(
             @PathVariable String id,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
         try {
@@ -190,37 +257,21 @@ public class PlayerCommandController {
                 return ResponseEntity.ok(response);
             }
 
-            // 检查验证状态
-            // 首先检查是否在用户账户的已验证UID列表中（永久验证）
-            boolean isPermanentVerified = false;
-            if (sessionToken != null && !sessionToken.trim().isEmpty()) {
-                String username = userService.validateSession(sessionToken);
-                if (username != null && userService.isUidVerified(username, uid)) {
-                    isPermanentVerified = true;
-                    logger.debug("UID {} 已永久绑定到用户 {} 的账户", uid, username);
-                }
-            }
-
-            // 如果未永久绑定，检查临时验证
-            if (!isPermanentVerified) {
-                String token = verificationService.getVerifiedToken(uid);
-                if (token == null) {
-                    response.put("success", false);
-                    response.put("message", "请先验证您的UID");
-                    response.put("needVerification", true);
-                    return ResponseEntity.ok(response);
-                }
-            }
-
-            // 获取指令详情
+            // 获取指令详情（先获取以便记录日志）
             Optional<PlayerCommand> optional = service.getCommandById(id);
             if (!optional.isPresent()) {
                 response.put("success", false);
                 response.put("message", "指令不存在");
                 return ResponseEntity.ok(response);
             }
-
             PlayerCommand command = optional.get();
+
+            // 严格验证UID归属权
+            Map<String, Object> validationErr = validateUidOwnership(
+                    sessionToken, uid, command.getCommand(), request);
+            if (validationErr != null) {
+                return ResponseEntity.ok(validationErr);
+            }
 
             // 增加浏览数
             service.incrementViews(id);
@@ -240,8 +291,7 @@ public class PlayerCommandController {
 
             logger.info("执行指令 - UID: {} (已验证), 原始: {}, 处理后: {}", uid, command.getCommand(), finalCommand);
 
-            // 验证通过后，使用控制台token执行指令（绕过玩家权限限制）
-            // 注意：虽然使用控制台token，但玩家必须先通过验证才能执行
+            // 验证通过后，使用控制台token执行指令
             OpenCommandResponse result = grasscutterService.executeConsoleCommand(
                     gcConfig.getFullUrl(),
                     gcConfig.getConsoleToken(),
@@ -254,7 +304,6 @@ public class PlayerCommandController {
             if (result.getRetcode() == 200) {
                 String resultData = result.getData() != null ? result.getData().toString() : "";
 
-                // 检查返回结果是否包含错误提示
                 if (resultData.contains("用法：") || resultData.contains("此命令需要")) {
                     response.put("success", false);
                     response.put("message", "指令格式错误");
@@ -394,7 +443,8 @@ public class PlayerCommandController {
      * 执行自定义指令（带安全验证）
      */
     @PostMapping("/custom/execute")
-    public ResponseEntity<Map<String, Object>> executeCustomCommand(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> executeCustomCommand(@RequestBody Map<String, String> body,
+                                                                     HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -419,10 +469,13 @@ public class PlayerCommandController {
             // 1. 检查是否为危险指令
             String dangerousCheck = CommandProcessor.checkDangerousCommand(command);
             if (dangerousCheck != null) {
+                String clientIp = getClientIp(request);
                 response.put("success", false);
                 response.put("message", dangerousCheck);
                 response.put("dangerous", true);
                 logger.warn("UID {} 尝试执行危险指令: {}", uid, command);
+                SecurityLogger.logAction(clientIp, null, uid, "DANGEROUS_CMD",
+                        "尝试执行危险指令: " + command);
                 return ResponseEntity.ok(response);
             }
 
@@ -434,33 +487,17 @@ public class PlayerCommandController {
                 return ResponseEntity.ok(response);
             }
 
-            // 3. 检查验证状态
-            // 首先检查是否在用户账户的已验证UID列表中（永久验证）
-            boolean isPermanentVerified = false;
-            if (sessionToken != null && !sessionToken.trim().isEmpty()) {
-                String username = userService.validateSession(sessionToken);
-                if (username != null && userService.isUidVerified(username, uid)) {
-                    isPermanentVerified = true;
-                    logger.debug("UID {} 已永久绑定到用户 {} 的账户", uid, username);
-                }
+            // 3. 严格验证UID归属权
+            Map<String, Object> validationErr = validateUidOwnership(sessionToken, uid, command, request);
+            if (validationErr != null) {
+                return ResponseEntity.ok(validationErr);
             }
 
-            // 如果未永久绑定，检查临时验证
-            if (!isPermanentVerified) {
-                String token = verificationService.getVerifiedToken(uid);
-                if (token == null) {
-                    response.put("success", false);
-                    response.put("message", "请先验证您的UID");
-                    response.put("needVerification", true);
-                    return ResponseEntity.ok(response);
-                }
-            }
-
-            // 5. 处理指令（添加UID）
+            // 4. 处理指令（添加UID）
             String finalCommand = CommandProcessor.processCommand(command, uid);
             logger.info("执行自定义指令: UID={}, 原始={}, 处理后={}", uid, command, finalCommand);
 
-            // 6. 使用控制台token执行指令（绕过权限限制）
+            // 5. 使用控制台token执行指令
             AppConfig.GrasscutterConfig gcConfig = ConfigLoader.getConfig().getGrasscutter();
             OpenCommandResponse result = grasscutterService.executeConsoleCommand(
                     gcConfig.getFullUrl(),
@@ -468,7 +505,7 @@ public class PlayerCommandController {
                     finalCommand
             );
 
-            // 7. 处理执行结果
+            // 6. 处理执行结果
             if (result != null && result.getRetcode() == 200) {
                 response.put("success", true);
                 String resultData = result.getData() != null ? result.getData().toString() : "指令执行成功";
