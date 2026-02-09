@@ -2355,26 +2355,43 @@
                 return;
             }
 
+            const uid = document.getElementById('player-uid').value.trim();
+            if (!uid) {
+                alert('请先输入UID！');
+                return;
+            }
+
+            const sessionToken = localStorage.getItem('sessionToken');
+            if (!sessionToken) {
+                alert('请先登录账户并绑定UID后再执行操作');
+                return;
+            }
+
             const btn = type === 'items' ? document.getElementById('execute-item-btn') : document.getElementById('execute-quest-btn');
             btn.disabled = true;
             btn.textContent = '执行中...';
 
             try {
-                const response = await fetch(`${API_BASE}/grasscutter/console`, {
+                const response = await fetch(`${API_BASE}/commands/custom/execute`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        serverUrl: gcConfig.fullUrl,
-                        command: lastGeneratedCommand
+                        command: lastGeneratedCommand,
+                        uid: uid,
+                        sessionToken: sessionToken
                     })
                 });
 
                 const result = await response.json();
 
-                if (isSuccess(result)) {
+                if (result.success) {
                     alert('✅ 指令执行成功！\n\n' + (result.data || '无返回信息'));
                 } else {
-                    alert('❌ 指令执行失败: ' + result.message);
+                    if (result.needLogin) {
+                        alert('请先登录账户并绑定UID后再执行操作');
+                    } else {
+                        alert('❌ 指令执行失败: ' + result.message);
+                    }
                 }
             } catch (error) {
                 alert('执行失败: ' + error.message);

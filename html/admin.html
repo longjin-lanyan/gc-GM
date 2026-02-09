@@ -409,9 +409,16 @@
         let currentTab = 'pending';
         let currentReviewId = null;
         let currentReviewAction = null;
+        let adminToken = '';
 
         // 初始化
         async function init() {
+            adminToken = prompt('请输入管理员Token (adminToken):');
+            if (!adminToken || !adminToken.trim()) {
+                document.querySelector('.container').innerHTML = '<h1>需要管理员认证</h1><p style="text-align:center;color:#666;">请刷新页面并输入正确的adminToken</p>';
+                return;
+            }
+            adminToken = adminToken.trim();
             await loadStats();
             await loadPendingCommands();
         }
@@ -419,8 +426,16 @@
         // 加载统计数据
         async function loadStats() {
             try {
-                const response = await fetch('/api/commands/admin/all');
+                const response = await fetch('/api/commands/admin/all', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ adminToken })
+                });
                 const commands = await response.json();
+                if (commands.success === false) {
+                    alert('认证失败: ' + commands.message);
+                    return;
+                }
 
                 const total = commands.length;
                 const pending = commands.filter(c => c.reviewStatus === 'PENDING').length;
@@ -462,8 +477,13 @@
             listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><div>加载中...</div></div>';
 
             try {
-                const response = await fetch('/api/commands/admin/pending');
+                const response = await fetch('/api/commands/admin/pending', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ adminToken })
+                });
                 const commands = await response.json();
+                if (commands.success === false) { return; }
 
                 if (commands.length === 0) {
                     listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>暂无待审核指令</div></div>';
@@ -511,8 +531,13 @@
             listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><div>加载中...</div></div>';
 
             try {
-                const response = await fetch('/api/commands/admin/all');
+                const response = await fetch('/api/commands/admin/all', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ adminToken })
+                });
                 const commands = await response.json();
+                if (commands.success === false) { return; }
 
                 if (commands.length === 0) {
                     listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>暂无指令</div></div>';
@@ -561,8 +586,13 @@
         // 查看指令详情
         async function viewCommand(id) {
             try {
-                const response = await fetch('/api/commands/admin/all');
+                const response = await fetch('/api/commands/admin/all', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ adminToken })
+                });
                 const commands = await response.json();
+                if (commands.success === false) { return; }
                 const cmd = commands.find(c => c.id === id);
 
                 if (!cmd) {
@@ -655,7 +685,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ reviewNote, category })
+                    body: JSON.stringify({ reviewNote, category, adminToken })
                 });
 
                 const result = await response.json();
@@ -681,8 +711,10 @@
             }
 
             try {
-                const response = await fetch(`/api/commands/admin/${id}`, {
-                    method: 'DELETE'
+                const response = await fetch(`/api/commands/admin/${id}/delete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ adminToken })
                 });
 
                 const result = await response.json();
