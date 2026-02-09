@@ -112,6 +112,46 @@ public class PlayerCommandController {
     }
 
     /**
+     * 验证管理员Token
+     * @return null表示验证通过，否则返回错误信息Map
+     */
+    private Map<String, Object> validateAdminToken(String adminToken, HttpServletRequest request) {
+        String configAdminToken = ConfigLoader.getConfig().getGrasscutter().getAdminToken();
+
+        if (configAdminToken == null || configAdminToken.isEmpty()
+                || "CHANGE_ME_TO_A_SECURE_RANDOM_STRING".equals(configAdminToken)) {
+            SecurityLogger.logAction(getClientIp(request), null, null, "ADMIN_REJECTED",
+                    "adminToken未配置，拒绝管理请求");
+            Map<String, Object> err = new HashMap<>();
+            err.put("success", false);
+            err.put("message", "管理员Token未配置，请在config.json中设置adminToken");
+            return err;
+        }
+
+        if (adminToken == null || adminToken.trim().isEmpty()) {
+            SecurityLogger.logAction(getClientIp(request), null, null, "ADMIN_NO_TOKEN",
+                    "未提供adminToken的管理请求");
+            Map<String, Object> err = new HashMap<>();
+            err.put("success", false);
+            err.put("message", "需要管理员认证");
+            return err;
+        }
+
+        if (!configAdminToken.equals(adminToken.trim())) {
+            String clientIp = getClientIp(request);
+            SecurityLogger.logAction(clientIp, null, null, "ADMIN_BAD_TOKEN",
+                    "adminToken验证失败");
+            logger.warn("管理员认证失败 - IP: {}", clientIp);
+            Map<String, Object> err = new HashMap<>();
+            err.put("success", false);
+            err.put("message", "管理员认证失败");
+            return err;
+        }
+
+        return null; // 验证通过
+    }
+
+    /**
      * 提交新指令
      */
     @PostMapping("/submit")
@@ -278,11 +318,15 @@ public class PlayerCommandController {
             SecurityLogger.logAction(clientIp, null, uid, "CMD_SEND",
                     "发送预设指令到GC: " + finalCommand);
 
-            // 验证通过后，使用控制台token执行指令
+            // 获取当前登录用户名用于日志记录
+            String callerUsername = userService.validateSession(sessionToken);
+
+            // 验证通过后，使用控制台token执行指令（传递调用者信息）
             OpenCommandResponse result = grasscutterService.executeConsoleCommand(
                     gcConfig.getFullUrl(),
                     gcConfig.getConsoleToken(),
-                    finalCommand
+                    finalCommand,
+                    clientIp, callerUsername, uid
             );
 
             logger.info("OpenCommand响应 - retcode: {}, message: {}, data: {}",
@@ -296,22 +340,22 @@ public class PlayerCommandController {
                     response.put("message", "指令格式错误");
                     response.put("data", resultData);
                     response.put("debug", "处理后的指令: " + finalCommand);
-                    SecurityLogger.logAction(clientIp, null, uid, "CMD_FORMAT_ERR", finalCommand);
+                    SecurityLogger.logAction(clientIp, callerUsername, uid, "CMD_FORMAT_ERR", finalCommand);
                 } else if (resultData.contains("无权限") || resultData.contains("No permission")) {
                     response.put("success", false);
                     response.put("message", "权限不足（这不应该发生，请检查控制台token配置）");
                     response.put("data", resultData);
-                    SecurityLogger.logAction(clientIp, null, uid, "CMD_PERM_ERR", finalCommand);
+                    SecurityLogger.logAction(clientIp, callerUsername, uid, "CMD_PERM_ERR", finalCommand);
                 } else {
                     response.put("success", true);
                     response.put("message", "指令执行成功");
                     response.put("data", resultData);
-                    SecurityLogger.logAction(clientIp, null, uid, "CMD_OK", finalCommand);
+                    SecurityLogger.logAction(clientIp, callerUsername, uid, "CMD_OK", finalCommand);
                 }
             } else {
                 response.put("success", false);
                 response.put("message", "指令执行失败: " + result.getMessage());
-                SecurityLogger.logAction(clientIp, null, uid, "CMD_FAIL",
+                SecurityLogger.logAction(clientIp, callerUsername, uid, "CMD_FAIL",
                         "retcode=" + result.getRetcode() + " | " + finalCommand);
             }
 
@@ -325,10 +369,16 @@ public class PlayerCommandController {
     }
 
     /**
-     * 获取所有指令（管理后台）
+     * 获取所有指令（管理后台 - 需要管理员认证）
      */
-    @GetMapping("/admin/all")
-    public ResponseEntity<List<PlayerCommand>> getAllCommands() {
+    @PostMapping("/admin/all")
+    public ResponseEntity<?> getAllCommands(@RequestBody(required = false) Map<String, String> body,
+                                            HttpServletRequest request) {
+        String adminToken = body != null ? body.get("adminToken") : null;
+        Map<String, Object> authErr = validateAdminToken(adminToken, request);
+        if (authErr != null) {
+            return ResponseEntity.ok(authErr);
+        }
         try {
             return ResponseEntity.ok(service.getAllCommands());
         } catch (Exception e) {
@@ -338,10 +388,16 @@ public class PlayerCommandController {
     }
 
     /**
-     * 获取待审核的指令（管理后台）
+     * 获取待审核的指令（管理后台 - 需要管理员认证）
      */
-    @GetMapping("/admin/pending")
-    public ResponseEntity<List<PlayerCommand>> getPendingCommands() {
+    @PostMapping("/admin/pending")
+    public ResponseEntity<?> getPendingCommands(@RequestBody(required = false) Map<String, String> body,
+                                                 HttpServletRequest request) {
+        String adminToken = body != null ? body.get("adminToken") : null;
+        Map<String, Object> authErr = validateAdminToken(adminToken, request);
+        if (authErr != null) {
+            return ResponseEntity.ok(authErr);
+        }
         try {
             return ResponseEntity.ok(service.getPendingCommands());
         } catch (Exception e) {
@@ -351,14 +407,22 @@ public class PlayerCommandController {
     }
 
     /**
-     * 审核通过（管理后台）
+     * 审核通过（管理后台 - 需要管理员认证）
      */
     @PostMapping("/admin/{id}/approve")
     public ResponseEntity<Map<String, Object>> approveCommand(
             @PathVariable String id,
-            @RequestBody(required = false) Map<String, String> body) {
+            @RequestBody(required = false) Map<String, String> body,
+            HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
+
+        String adminToken = body != null ? body.get("adminToken") : null;
+        Map<String, Object> authErr = validateAdminToken(adminToken, request);
+        if (authErr != null) {
+            return ResponseEntity.ok(authErr);
+        }
+
         try {
             String reviewNote = body != null ? body.get("reviewNote") : "";
             String category = body != null ? body.get("category") : null;
@@ -368,6 +432,8 @@ public class PlayerCommandController {
                 response.put("success", true);
                 response.put("message", "审核通过");
                 response.put("data", updated);
+                SecurityLogger.logAction(getClientIp(request), "ADMIN", null, "ADMIN_APPROVE",
+                        "审核通过指令: " + id);
             } else {
                 response.put("success", false);
                 response.put("message", "指令不存在");
@@ -382,14 +448,22 @@ public class PlayerCommandController {
     }
 
     /**
-     * 审核拒绝（管理后台）
+     * 审核拒绝（管理后台 - 需要管理员认证）
      */
     @PostMapping("/admin/{id}/reject")
     public ResponseEntity<Map<String, Object>> rejectCommand(
             @PathVariable String id,
-            @RequestBody(required = false) Map<String, String> body) {
+            @RequestBody(required = false) Map<String, String> body,
+            HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
+
+        String adminToken = body != null ? body.get("adminToken") : null;
+        Map<String, Object> authErr = validateAdminToken(adminToken, request);
+        if (authErr != null) {
+            return ResponseEntity.ok(authErr);
+        }
+
         try {
             String reviewNote = body != null ? body.get("reviewNote") : "";
             String category = body != null ? body.get("category") : null;
@@ -399,6 +473,8 @@ public class PlayerCommandController {
                 response.put("success", true);
                 response.put("message", "已拒绝");
                 response.put("data", updated);
+                SecurityLogger.logAction(getClientIp(request), "ADMIN", null, "ADMIN_REJECT",
+                        "拒绝指令: " + id);
             } else {
                 response.put("success", false);
                 response.put("message", "指令不存在");
@@ -413,15 +489,28 @@ public class PlayerCommandController {
     }
 
     /**
-     * 删除指令（管理后台）
+     * 删除指令（管理后台 - 需要管理员认证）
      */
-    @DeleteMapping("/admin/{id}")
-    public ResponseEntity<Map<String, Object>> deleteCommand(@PathVariable String id) {
+    @PostMapping("/admin/{id}/delete")
+    public ResponseEntity<Map<String, Object>> deleteCommand(
+            @PathVariable String id,
+            @RequestBody(required = false) Map<String, String> body,
+            HttpServletRequest request) {
+
         Map<String, Object> response = new HashMap<>();
+
+        String adminToken = body != null ? body.get("adminToken") : null;
+        Map<String, Object> authErr = validateAdminToken(adminToken, request);
+        if (authErr != null) {
+            return ResponseEntity.ok(authErr);
+        }
+
         try {
             service.deleteCommand(id);
             response.put("success", true);
             response.put("message", "删除成功");
+            SecurityLogger.logAction(getClientIp(request), "ADMIN", null, "ADMIN_DELETE",
+                    "删除指令: " + id);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("删除指令失败", e);
@@ -488,16 +577,19 @@ public class PlayerCommandController {
             // 4. 处理指令（添加UID）
             String finalCommand = CommandProcessor.processCommand(command, uid);
             String clientIp = getClientIp(request);
-            logger.info("执行自定义指令: UID={}, 原始={}, 处理后={}", uid, command, finalCommand);
-            SecurityLogger.logAction(clientIp, null, uid, "CUSTOM_CMD_SEND",
+            // 获取当前登录用户名用于日志记录
+            String callerUsername = userService.validateSession(sessionToken);
+            logger.info("执行自定义指令: UID={}, 用户={}, 原始={}, 处理后={}", uid, callerUsername, command, finalCommand);
+            SecurityLogger.logAction(clientIp, callerUsername, uid, "CUSTOM_CMD_SEND",
                     "发送自定义指令到GC: " + finalCommand);
 
-            // 5. 使用控制台token执行指令
+            // 5. 使用控制台token执行指令（传递调用者信息）
             AppConfig.GrasscutterConfig gcConfig = ConfigLoader.getConfig().getGrasscutter();
             OpenCommandResponse result = grasscutterService.executeConsoleCommand(
                     gcConfig.getFullUrl(),
                     gcConfig.getConsoleToken(),
-                    finalCommand
+                    finalCommand,
+                    clientIp, callerUsername, uid
             );
 
             // 6. 处理执行结果
@@ -507,13 +599,13 @@ public class PlayerCommandController {
                 response.put("data", resultData);
                 response.put("message", "指令执行成功");
                 logger.info("自定义指令执行成功: UID={}, 指令={}", uid, finalCommand);
-                SecurityLogger.logAction(clientIp, null, uid, "CUSTOM_CMD_OK", finalCommand);
+                SecurityLogger.logAction(clientIp, callerUsername, uid, "CUSTOM_CMD_OK", finalCommand);
             } else {
                 response.put("success", false);
                 String errorMsg = result != null ? result.getMessage() : "未知错误";
                 response.put("message", "执行失败: " + errorMsg);
                 logger.error("自定义指令执行失败: UID={}, 指令={}, 错误={}", uid, finalCommand, errorMsg);
-                SecurityLogger.logAction(clientIp, null, uid, "CUSTOM_CMD_FAIL",
+                SecurityLogger.logAction(clientIp, callerUsername, uid, "CUSTOM_CMD_FAIL",
                         "错误: " + errorMsg + " | 指令: " + finalCommand);
             }
 

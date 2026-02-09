@@ -4,11 +4,13 @@ import com.genshin.gm.config.AppConfig;
 import com.genshin.gm.config.ConfigLoader;
 import com.genshin.gm.model.OpenCommandResponse;
 import com.genshin.gm.service.GrasscutterService;
+import com.genshin.gm.util.SecurityLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +25,65 @@ public class GrasscutterController {
 
     @Autowired
     private GrasscutterService grasscutterService;
+
+    /**
+     * 从HttpServletRequest中获取客户端真实IP
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
+    }
+
+    /**
+     * 验证管理员Token
+     * @return null表示验证通过，否则返回错误响应
+     */
+    private OpenCommandResponse validateAdminToken(String adminToken, HttpServletRequest request) {
+        String configAdminToken = ConfigLoader.getConfig().getGrasscutter().getAdminToken();
+
+        if (configAdminToken == null || configAdminToken.isEmpty()
+                || "CHANGE_ME_TO_A_SECURE_RANDOM_STRING".equals(configAdminToken)) {
+            logger.error("adminToken未配置或使用默认值，拒绝所有管理请求");
+            SecurityLogger.logAction(getClientIp(request), null, null, "ADMIN_REJECTED",
+                    "adminToken未配置，拒绝管理请求");
+            OpenCommandResponse response = new OpenCommandResponse();
+            response.setRetcode(403);
+            response.setMessage("管理员Token未配置，请在config.json中设置adminToken");
+            return response;
+        }
+
+        if (adminToken == null || adminToken.trim().isEmpty()) {
+            String clientIp = getClientIp(request);
+            SecurityLogger.logAction(clientIp, null, null, "ADMIN_NO_TOKEN",
+                    "未提供adminToken的管理请求");
+            OpenCommandResponse response = new OpenCommandResponse();
+            response.setRetcode(401);
+            response.setMessage("需要管理员认证，请提供adminToken");
+            return response;
+        }
+
+        if (!configAdminToken.equals(adminToken.trim())) {
+            String clientIp = getClientIp(request);
+            SecurityLogger.logAction(clientIp, null, null, "ADMIN_BAD_TOKEN",
+                    "adminToken验证失败");
+            logger.warn("管理员认证失败 - IP: {}", clientIp);
+            OpenCommandResponse response = new OpenCommandResponse();
+            response.setRetcode(403);
+            response.setMessage("管理员认证失败");
+            return response;
+        }
+
+        return null; // 验证通过
+    }
 
     /**
      * 获取配置信息（不包含敏感信息）
@@ -99,14 +160,22 @@ public class GrasscutterController {
     }
 
     /**
-     * 执行命令（控制台模式）
+     * 执行命令（控制台模式）- 需要管理员认证
      */
     @PostMapping("/console")
-    public OpenCommandResponse executeConsoleCommand(@RequestBody Map<String, String> request) {
+    public OpenCommandResponse executeConsoleCommand(@RequestBody Map<String, String> request,
+                                                      HttpServletRequest httpRequest) {
+        // 验证管理员Token
+        String adminToken = request.get("adminToken");
+        OpenCommandResponse authError = validateAdminToken(adminToken, httpRequest);
+        if (authError != null) {
+            return authError;
+        }
+
         String serverUrl = request.getOrDefault("serverUrl",
                 ConfigLoader.getConfig().getGrasscutter().getFullUrl());
-        String consoleToken = request.getOrDefault("consoleToken",
-                ConfigLoader.getConfig().getGrasscutter().getConsoleToken());
+        // 使用服务器配置的consoleToken，不允许从请求体覆盖
+        String consoleToken = ConfigLoader.getConfig().getGrasscutter().getConsoleToken();
         String command = request.get("command");
 
         if (consoleToken.isEmpty()) {
@@ -116,8 +185,10 @@ public class GrasscutterController {
             return response;
         }
 
-        logger.info("执行控制台命令: {}", command);
-        return grasscutterService.executeConsoleCommand(serverUrl, consoleToken, command);
+        String clientIp = getClientIp(httpRequest);
+        logger.info("管理员执行控制台命令 - IP: {}, 命令: {}", clientIp, command);
+        return grasscutterService.executeConsoleCommand(serverUrl, consoleToken, command,
+                clientIp, "ADMIN_CONSOLE", null);
     }
 
     /**

@@ -70,6 +70,7 @@ public class AppConfig {
         private String serverUrl = "http://127.0.0.1:443";
         private String apiPath = "/opencommand/api";
         private String consoleToken = "";
+        private String adminToken = "";
         private int timeout = 10000;
 
         public String getServerUrl() {
@@ -94,6 +95,14 @@ public class AppConfig {
 
         public void setConsoleToken(String consoleToken) {
             this.consoleToken = consoleToken;
+        }
+
+        public String getAdminToken() {
+            return adminToken;
+        }
+
+        public void setAdminToken(String adminToken) {
+            this.adminToken = adminToken;
         }
 
         public int getTimeout() {

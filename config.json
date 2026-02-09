@@ -6,6 +6,7 @@
     "serverUrl": "http://127.0.0.1:1145",
     "apiPath": "/opencommand/api",
     "consoleToken": "sh345Hfss34P4Ya99sb4e6MRUEGd5srm95i34hFBf2EMDPutOye",
+    "adminToken": "CHANGE_ME_TO_A_SECURE_RANDOM_STRING",
     "timeout": 10000
   },
   "mongodb": {

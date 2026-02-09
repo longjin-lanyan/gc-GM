@@ -118,27 +118,35 @@ public class GrasscutterService {
     /**
      * 执行命令（控制台模式）
      * 每条发送到Grasscutter的指令都会写入 all.txt
+     *
+     * @param serverUrl    Grasscutter服务器URL
+     * @param consoleToken 控制台token
+     * @param command      要执行的命令
+     * @param callerIp     调用者IP
+     * @param callerUser   调用者账号
+     * @param callerUid    调用者UID
      */
-    public OpenCommandResponse executeConsoleCommand(String serverUrl, String consoleToken, String command) {
+    public OpenCommandResponse executeConsoleCommand(String serverUrl, String consoleToken, String command,
+                                                      String callerIp, String callerUser, String callerUid) {
         try {
             OpenCommandRequest request = new OpenCommandRequest("command", command);
             request.setToken(consoleToken);
 
             // 记录到 all.txt：这是实际发送到割草机的指令
-            SecurityLogger.logAction("-", "-", "-", "GC_EXECUTE", command);
+            SecurityLogger.logAction(callerIp, callerUser, callerUid, "GC_EXECUTE", command);
 
             OpenCommandResponse result = sendRequest(serverUrl, request);
 
             // 记录执行结果
             String resultStr = (result != null && result.getData() != null) ? result.getData().toString() : "";
             int retcode = result != null ? result.getRetcode() : -1;
-            SecurityLogger.logAction("-", "-", "-", "GC_RESULT",
+            SecurityLogger.logAction(callerIp, callerUser, callerUid, "GC_RESULT",
                     "retcode=" + retcode + " | 指令: " + command + " | 结果: " + resultStr);
 
             return result;
         } catch (Exception e) {
             logger.error("执行控制台命令失败", e);
-            SecurityLogger.logAction("-", "-", "-", "GC_ERROR",
+            SecurityLogger.logAction(callerIp, callerUser, callerUid, "GC_ERROR",
                     "指令执行异常: " + command + " | 错误: " + e.getMessage());
             OpenCommandResponse response = new OpenCommandResponse();
             response.setRetcode(500);
