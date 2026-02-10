@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 public class CommandProcessor {
 
     // 可以指定目标UID的指令列表（在远程执行时需要添加@UID）
-    // 注意：Grasscutter允许@UID放在命令的任意位置，但为了远程执行，我们统一放在指令名后面
+    // 注意：统一将@UID放在指令名后面，这是OpenCommand控制台模式下最可靠的位置
     private static final Set<String> UID_TARGETABLE_COMMANDS = new HashSet<>(Arrays.asList(
             // 物品给予类
             "give", "giveall", "giveart", "givechar",
@@ -32,14 +32,16 @@ public class CommandProcessor {
             // 任务类
             "quest",
 
-            // 玩家状态类
+            // 玩家属性/状态类
             "heal",
             "setstats", "stats",
             "setworldlevel", "setwl",
             "energy",
+            "prop", "setprop",
 
             // 战斗相关
             "killall", "killcharacter",
+            "spawn",
 
             // 队伍管理
             "team",
@@ -49,6 +51,13 @@ public class CommandProcessor {
 
             // 圣遗物构建
             "build",
+
+            // 清理
+            "clear",
+
+            // 场景/副本
+            "enterdungeon", "dungeon",
+            "weather",
 
             // 其他
             "kick",
@@ -97,9 +106,9 @@ public class CommandProcessor {
     /**
      * 处理指令，智能添加UID
      * 规则：
-     * 1. give 和 quest 命令：UID 在命令名后面（例如：give @UID 202 x999）
-     * 2. 其他需要UID的命令：UID 在命令最后（例如：tp 1000 500 -1000 @UID）
-     * 3. 处理前先删除命令中已有的 @ 符号，然后统一添加 @UID
+     * 1. 所有需要UID的命令：@UID 统一放在命令名后面（例如：prop @UID fly off）
+     *    这是OpenCommand控制台模式下最可靠的解析位置，放在末尾可能导致定位到错误玩家
+     * 2. 处理前先删除命令中已有的 @ 符号，然后统一添加 @UID
      *
      * @param command 原始指令
      * @param uid 玩家UID
@@ -144,33 +153,16 @@ public class CommandProcessor {
                                     .replaceAll("\\s+", " ")
                                     .trim();
 
-        // 重新分割清理后的命令
-        parts = cleanCommand.split("\\s+");
-        String cleanCmdName = parts[0].toLowerCase();
-        if (cleanCmdName.startsWith("/")) {
-            cleanCmdName = cleanCmdName.substring(1);
+        // 第二步：统一将 @UID 插入到命令名后面
+        // 例如: "prop fly off" → "prop @10261 fly off"
+        //       "give 101 x1"  → "give @10261 101 x1"
+        //       "tp 1000 500"  → "tp @10261 1000 500"
+        String[] cmdParts = cleanCommand.split("\\s+", 2);
+        if (cmdParts.length == 1) {
+            return cmdParts[0] + " @" + uid;
+        } else {
+            return cmdParts[0] + " @" + uid + " " + cmdParts[1];
         }
-
-        // 第二步：根据命令类型添加 @UID
-        // give 和 quest 命令：UID 在命令名后面
-        if (cleanCmdName.equals("give") || cleanCmdName.equals("giveall") || cleanCmdName.equals("quest")) {
-            String[] cmdParts = cleanCommand.split("\\s+", 2); // 分割成命令名和剩余部分
-            if (cmdParts.length == 1) {
-                // 只有命令名，没有参数
-                return cmdParts[0] + " @" + uid;
-            } else {
-                // 命令名 + @UID + 剩余参数
-                return cmdParts[0] + " @" + uid + " " + cmdParts[1];
-            }
-        }
-
-        // 其他所有需要UID的命令：UID 在最后
-        if (UID_TARGETABLE_COMMANDS.contains(cleanCmdName)) {
-            return cleanCommand + " @" + uid;
-        }
-
-        // 未知命令，保守策略：在最后添加 @UID
-        return cleanCommand + " @" + uid;
     }
 
     /**
