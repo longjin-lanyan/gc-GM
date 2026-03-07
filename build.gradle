@@ -19,7 +19,8 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
 
     // 明确添加Logback依赖
     implementation 'ch.qos.logback:logback-classic:1.2.11'

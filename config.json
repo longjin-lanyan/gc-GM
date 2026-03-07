@@ -9,11 +9,11 @@
     "adminToken": "CHANGE_ME_TO_A_SECURE_RANDOM_STRING",
     "timeout": 10000
   },
-  "mongodb": {
+  "mysql": {
     "host": "localhost",
-    "port": 27017,
+    "port": 3306,
     "database": "genshin_gm",
-    "username": "",
+    "username": "root",
     "password": ""
   }
 }

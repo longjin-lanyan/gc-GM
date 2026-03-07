@@ -1,9 +1,6 @@
 package com.genshin.gm.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,13 +8,15 @@ import java.util.List;
 /**
  * 用户模型
  */
-@Document(collection = "users")
+@Entity
+@Table(name = "users")
 public class User {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Indexed(unique = true)
+    @Column(unique = true, nullable = false)
     private String username;  // 用户名（唯一）
 
     private String password;  // 密码（加密存储）
@@ -26,6 +25,9 @@ public class User {
 
     private LocalDateTime lastLoginAt;  // 最后登录时间
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_verified_uids", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "uid")
     private List<String> verifiedUids;  // 已验证的UID列表
 
     public User() {
@@ -41,11 +43,11 @@ public class User {
 
     // Getters and Setters
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

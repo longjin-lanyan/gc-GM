@@ -58,7 +58,7 @@ public class PlayerCommandService {
     /**
      * 增加浏览数
      */
-    public void incrementViews(String id) {
+    public void incrementViews(Long id) {
         Optional<PlayerCommand> optional = repository.findById(id);
         if (optional.isPresent()) {
             PlayerCommand command = optional.get();
@@ -70,7 +70,7 @@ public class PlayerCommandService {
     /**
      * 点赞（需要UID验证，一个UID只能点一次）
      */
-    public boolean likeCommand(String id, String uid) {
+    public boolean likeCommand(Long id, String uid) {
         if (uid == null || uid.trim().isEmpty()) {
             return false;
         }
@@ -110,14 +110,14 @@ public class PlayerCommandService {
     /**
      * 根据ID获取指令
      */
-    public Optional<PlayerCommand> getCommandById(String id) {
+    public Optional<PlayerCommand> getCommandById(Long id) {
         return repository.findById(id);
     }
 
     /**
      * 审核通过
      */
-    public PlayerCommand approveCommand(String id, String reviewNote, String category) {
+    public PlayerCommand approveCommand(Long id, String reviewNote, String category) {
         Optional<PlayerCommand> optional = repository.findById(id);
         if (optional.isPresent()) {
             PlayerCommand command = optional.get();
@@ -136,7 +136,7 @@ public class PlayerCommandService {
     /**
      * 审核拒绝
      */
-    public PlayerCommand rejectCommand(String id, String reviewNote, String category) {
+    public PlayerCommand rejectCommand(Long id, String reviewNote, String category) {
         Optional<PlayerCommand> optional = repository.findById(id);
         if (optional.isPresent()) {
             PlayerCommand command = optional.get();
@@ -155,7 +155,7 @@ public class PlayerCommandService {
     /**
      * 删除指令
      */
-    public void deleteCommand(String id) {
+    public void deleteCommand(Long id) {
         repository.deleteById(id);
     }
 }

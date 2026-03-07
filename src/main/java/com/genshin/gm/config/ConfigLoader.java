@@ -35,10 +35,10 @@ public class ConfigLoader {
             ObjectMapper objectMapper = new ObjectMapper();
             appConfig = objectMapper.readValue(configFile, AppConfig.class);
 
-            // 如果配置文件中没有MongoDB配置，使用默认配置
-            if (appConfig.getMongodb() == null) {
-                logger.warn("配置文件中未找到MongoDB配置，使用默认配置");
-                appConfig.setMongodb(new AppConfig.MongoDBConfig());
+            // 如果配置文件中没有MySQL配置，使用默认配置
+            if (appConfig.getMysql() == null) {
+                logger.warn("配置文件中未找到MySQL配置，使用默认配置");
+                appConfig.setMysql(new AppConfig.MySQLConfig());
             }
 
             logger.info("成功加载配置文件: {}", CONFIG_FILE);
@@ -46,10 +46,10 @@ public class ConfigLoader {
                        appConfig.getFrontend().getPort());
             logger.info("Grasscutter API: {}", appConfig.getGrasscutter().getFullUrl());
             logger.info("Grasscutter 超时: {}ms", appConfig.getGrasscutter().getTimeout());
-            logger.info("MongoDB连接: {}:{}/{}",
-                       appConfig.getMongodb().getHost(),
-                       appConfig.getMongodb().getPort(),
-                       appConfig.getMongodb().getDatabase());
+            logger.info("MySQL连接: {}:{}/{}",
+                       appConfig.getMysql().getHost(),
+                       appConfig.getMysql().getPort(),
+                       appConfig.getMysql().getDatabase());
 
             return appConfig;
         } catch (IOException e) {

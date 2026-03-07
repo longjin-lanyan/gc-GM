@@ -6,7 +6,7 @@ package com.genshin.gm.config;
 public class AppConfig {
     private FrontendConfig frontend;
     private GrasscutterConfig grasscutter;
-    private MongoDBConfig mongodb;
+    private MySQLConfig mysql;
 
     public FrontendConfig getFrontend() {
         return frontend;
@@ -24,12 +24,12 @@ public class AppConfig {
         this.grasscutter = grasscutter;
     }
 
-    public MongoDBConfig getMongodb() {
-        return mongodb;
+    public MySQLConfig getMysql() {
+        return mysql;
     }
 
-    public void setMongodb(MongoDBConfig mongodb) {
-        this.mongodb = mongodb;
+    public void setMysql(MySQLConfig mysql) {
+        this.mysql = mysql;
     }
 
     public static class FrontendConfig {
@@ -118,11 +118,11 @@ public class AppConfig {
         }
     }
 
-    public static class MongoDBConfig {
+    public static class MySQLConfig {
         private String host = "localhost";
-        private int port = 27017;
+        private int port = 3306;
         private String database = "genshin_gm";
-        private String username = "";
+        private String username = "root";
         private String password = "";
 
         public String getHost() {
@@ -165,17 +165,9 @@ public class AppConfig {
             this.password = password;
         }
 
-        public String getConnectionString() {
-            StringBuilder sb = new StringBuilder("mongodb://");
-            if (username != null && !username.isEmpty()) {
-                sb.append(username);
-                if (password != null && !password.isEmpty()) {
-                    sb.append(":").append(password);
-                }
-                sb.append("@");
-            }
-            sb.append(host).append(":").append(port).append("/").append(database);
-            return sb.toString();
+        public String getJdbcUrl() {
+            return "jdbc:mysql://" + host + ":" + port + "/" + database
+                    + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4";
         }
     }
 }

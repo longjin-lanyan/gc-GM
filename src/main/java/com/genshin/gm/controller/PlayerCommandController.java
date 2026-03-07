@@ -214,7 +214,7 @@ public class PlayerCommandController {
      * 增加浏览数
      */
     @PostMapping("/{id}/view")
-    public ResponseEntity<Map<String, Object>> incrementViews(@PathVariable String id) {
+    public ResponseEntity<Map<String, Object>> incrementViews(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         try {
             service.incrementViews(id);
@@ -232,7 +232,7 @@ public class PlayerCommandController {
      */
     @PostMapping("/{id}/like")
     public ResponseEntity<Map<String, Object>> likeCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody Map<String, String> body) {
 
         Map<String, Object> response = new HashMap<>();
@@ -266,7 +266,7 @@ public class PlayerCommandController {
      */
     @PostMapping("/{id}/execute")
     public ResponseEntity<Map<String, Object>> executeCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody Map<String, String> body,
             HttpServletRequest request) {
 
@@ -411,7 +411,7 @@ public class PlayerCommandController {
      */
     @PostMapping("/admin/{id}/approve")
     public ResponseEntity<Map<String, Object>> approveCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body,
             HttpServletRequest request) {
 
@@ -452,7 +452,7 @@ public class PlayerCommandController {
      */
     @PostMapping("/admin/{id}/reject")
     public ResponseEntity<Map<String, Object>> rejectCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body,
             HttpServletRequest request) {
 
@@ -493,7 +493,7 @@ public class PlayerCommandController {
      */
     @PostMapping("/admin/{id}/delete")
     public ResponseEntity<Map<String, Object>> deleteCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body,
             HttpServletRequest request) {
 

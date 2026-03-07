@@ -1,7 +1,7 @@
 package com.genshin.gm.repository;
 
 import com.genshin.gm.model.PlayerCommand;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.List;
  * 玩家指令数据访问接口
  */
 @Repository
-public interface PlayerCommandRepository extends MongoRepository<PlayerCommand, String> {
+public interface PlayerCommandRepository extends JpaRepository<PlayerCommand, Long> {
 
     /**
      * 根据审核状态查询指令
