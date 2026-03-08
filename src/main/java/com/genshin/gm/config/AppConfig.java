@@ -1,5 +1,7 @@
 package com.genshin.gm.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * 应用配置类
  */
@@ -61,6 +63,7 @@ public class AppConfig {
             this.autoOpen = autoOpen;
         }
 
+        @JsonIgnore
         public String getUrl() {
             return "http://" + host + ":" + port;
         }
@@ -113,6 +116,7 @@ public class AppConfig {
             this.timeout = timeout;
         }
 
+        @JsonIgnore
         public String getFullUrl() {
             return serverUrl + apiPath;
         }
@@ -165,6 +169,7 @@ public class AppConfig {
             this.password = password;
         }
 
+        @JsonIgnore
         public String getJdbcUrl() {
             return "jdbc:mysql://" + host + ":" + port + "/" + database
                     + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4";
