@@ -2,8 +2,8 @@ package com.genshin.gm.model;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * 用户模型
@@ -16,9 +16,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 50)
     private String username;  // 用户名（唯一）
 
+    @Column(nullable = false)
     private String password;  // 密码（加密存储）
 
     private LocalDateTime createdAt;  // 注册时间
@@ -26,13 +27,17 @@ public class User {
     private LocalDateTime lastLoginAt;  // 最后登录时间
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_verified_uids", joinColumns = @JoinColumn(name = "user_id"))
+    @CollectionTable(
+            name = "user_verified_uids",
+            joinColumns = @JoinColumn(name = "user_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "uid"})
+    )
     @Column(name = "uid")
-    private List<String> verifiedUids;  // 已验证的UID列表
+    private Set<String> verifiedUids;  // 已验证的UID集合
 
     public User() {
         this.createdAt = LocalDateTime.now();
-        this.verifiedUids = new ArrayList<>();
+        this.verifiedUids = new LinkedHashSet<>();
     }
 
     public User(String username, String password) {
@@ -83,11 +88,11 @@ public class User {
         this.lastLoginAt = lastLoginAt;
     }
 
-    public List<String> getVerifiedUids() {
+    public Set<String> getVerifiedUids() {
         return verifiedUids;
     }
 
-    public void setVerifiedUids(List<String> verifiedUids) {
+    public void setVerifiedUids(Set<String> verifiedUids) {
         this.verifiedUids = verifiedUids;
     }
 
@@ -96,11 +101,9 @@ public class User {
      */
     public void addVerifiedUid(String uid) {
         if (this.verifiedUids == null) {
-            this.verifiedUids = new ArrayList<>();
+            this.verifiedUids = new LinkedHashSet<>();
         }
-        if (!this.verifiedUids.contains(uid)) {
-            this.verifiedUids.add(uid);
-        }
+        this.verifiedUids.add(uid);
     }
 
     /**

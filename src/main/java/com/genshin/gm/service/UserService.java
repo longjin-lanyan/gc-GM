@@ -233,7 +233,7 @@ public class UserService {
             if (!userOpt.isPresent()) {
                 return "用户不存在";
             }
-            List<String> uids = userOpt.get().getVerifiedUids();
+            Set<String> uids = userOpt.get().getVerifiedUids();
             if (uids == null || uids.isEmpty()) {
                 return "无绑定UID";
             }
