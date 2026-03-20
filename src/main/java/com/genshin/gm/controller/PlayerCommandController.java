@@ -374,13 +374,14 @@ public class PlayerCommandController {
     @PostMapping("/admin/all")
     public ResponseEntity<?> getAllCommands(@RequestBody(required = false) Map<String, String> body,
                                             HttpServletRequest request) {
-        String adminToken = body != null ? body.get("adminToken") : null;
-        Map<String, Object> authErr = validateAdminToken(adminToken, request);
-        if (authErr != null) {
-            return ResponseEntity.ok(authErr);
-        }
         try {
-            return ResponseEntity.ok(service.getAllCommands());
+            String adminToken = body != null ? body.get("adminToken") : null;
+            Map<String, Object> authErr = validateAdminToken(adminToken, request);
+            if (authErr != null) {
+                return ResponseEntity.ok(authErr);
+            }
+            List<PlayerCommand> commands = service.getAllCommands();
+            return ResponseEntity.ok(commands != null ? commands : List.of());
         } catch (Exception e) {
             logger.error("获取所有指令失败", e);
             return ResponseEntity.ok(List.of());
@@ -393,13 +394,14 @@ public class PlayerCommandController {
     @PostMapping("/admin/pending")
     public ResponseEntity<?> getPendingCommands(@RequestBody(required = false) Map<String, String> body,
                                                  HttpServletRequest request) {
-        String adminToken = body != null ? body.get("adminToken") : null;
-        Map<String, Object> authErr = validateAdminToken(adminToken, request);
-        if (authErr != null) {
-            return ResponseEntity.ok(authErr);
-        }
         try {
-            return ResponseEntity.ok(service.getPendingCommands());
+            String adminToken = body != null ? body.get("adminToken") : null;
+            Map<String, Object> authErr = validateAdminToken(adminToken, request);
+            if (authErr != null) {
+                return ResponseEntity.ok(authErr);
+            }
+            List<PlayerCommand> commands = service.getPendingCommands();
+            return ResponseEntity.ok(commands != null ? commands : List.of());
         } catch (Exception e) {
             logger.error("获取待审核指令失败", e);
             return ResponseEntity.ok(List.of());

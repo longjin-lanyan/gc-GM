@@ -428,12 +428,21 @@
             try {
                 const response = await fetch('/api/commands/admin/all', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
                     body: JSON.stringify({ adminToken })
                 });
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('loadStats HTTP错误:', response.status, text);
+                    return;
+                }
                 const commands = await response.json();
-                if (commands.success === false) {
-                    alert('认证失败: ' + commands.message);
+                if (commands.success === false || commands.retcode) {
+                    alert('认证失败: ' + (commands.message || '未知错误'));
+                    return;
+                }
+                if (!Array.isArray(commands)) {
+                    console.error('loadStats: 响应不是数组', commands);
                     return;
                 }
 
@@ -479,11 +488,21 @@
             try {
                 const response = await fetch('/api/commands/admin/pending', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
                     body: JSON.stringify({ adminToken })
                 });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error('HTTP ' + response.status + ': ' + text.substring(0, 200));
+                }
                 const commands = await response.json();
-                if (commands.success === false) { return; }
+                if (commands.success === false || (commands.retcode && commands.retcode !== 200)) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>' + (commands.message || '认证失败') + '</div></div>';
+                    return;
+                }
+                if (!Array.isArray(commands)) {
+                    throw new Error('响应格式错误: ' + JSON.stringify(commands).substring(0, 200));
+                }
 
                 if (commands.length === 0) {
                     listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>暂无待审核指令</div></div>';
@@ -521,7 +540,7 @@
                 `;
             } catch (error) {
                 console.error('加载待审核指令失败:', error);
-                listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div>加载失败</div></div>';
+                listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div>加载失败: ' + error.message + '</div></div>';
             }
         }
 
@@ -533,11 +552,21 @@
             try {
                 const response = await fetch('/api/commands/admin/all', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
                     body: JSON.stringify({ adminToken })
                 });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error('HTTP ' + response.status + ': ' + text.substring(0, 200));
+                }
                 const commands = await response.json();
-                if (commands.success === false) { return; }
+                if (commands.success === false || (commands.retcode && commands.retcode !== 200)) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>' + (commands.message || '认证失败') + '</div></div>';
+                    return;
+                }
+                if (!Array.isArray(commands)) {
+                    throw new Error('响应格式错误: ' + JSON.stringify(commands).substring(0, 200));
+                }
 
                 if (commands.length === 0) {
                     listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>暂无指令</div></div>';
@@ -579,7 +608,7 @@
                 `;
             } catch (error) {
                 console.error('加载所有指令失败:', error);
-                listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div>加载失败</div></div>';
+                listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div>加载失败: ' + error.message + '</div></div>';
             }
         }
 
