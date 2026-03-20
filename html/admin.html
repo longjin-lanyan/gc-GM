@@ -622,7 +622,7 @@
                 });
                 const commands = await response.json();
                 if (commands.success === false || (commands.retcode && commands.retcode !== 200)) { return; }
-                const cmd = commands.find(c => c.id === id);
+                const cmd = commands.find(c => String(c.id) === String(id));
 
                 if (!cmd) {
                     alert('指令不存在');

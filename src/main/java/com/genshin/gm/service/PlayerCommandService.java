@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,6 +54,13 @@ public class PlayerCommandService {
      */
     public List<PlayerCommand> getApprovedCommandsByCategory(String category) {
         return repository.findByCategoryAndReviewStatusOrderByLikesDesc(category, "APPROVED");
+    }
+
+    /**
+     * 获取排除指定分类的已审核通过指令
+     */
+    public List<PlayerCommand> getApprovedCommandsExcludeCategories(Collection<String> excludeCategories) {
+        return repository.findByReviewStatusAndCategoryNotInOrderByUploadTimeDesc("APPROVED", excludeCategories);
     }
 
     /**

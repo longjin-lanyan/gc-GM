@@ -190,6 +190,7 @@ public class PlayerCommandController {
     @GetMapping("/approved")
     public ResponseEntity<List<PlayerCommand>> getApprovedCommands(
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) String exclude,
             @RequestParam(required = false, defaultValue = "time") String sort) {
 
         try {
@@ -197,6 +198,10 @@ public class PlayerCommandController {
 
             if (category != null && !category.isEmpty()) {
                 commands = service.getApprovedCommandsByCategory(category);
+            } else if (exclude != null && !exclude.isEmpty()) {
+                // 排除指定分类，多个用逗号分隔
+                List<String> excludeList = List.of(exclude.split(","));
+                commands = service.getApprovedCommandsExcludeCategories(excludeList);
             } else if ("popular".equals(sort)) {
                 commands = service.getPopularCommands();
             } else {

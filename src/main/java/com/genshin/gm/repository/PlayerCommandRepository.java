@@ -4,6 +4,7 @@ import com.genshin.gm.model.PlayerCommand;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -36,4 +37,9 @@ public interface PlayerCommandRepository extends JpaRepository<PlayerCommand, Lo
      * 查询所有已审核通过的指令，按点赞数降序排序
      */
     List<PlayerCommand> findByReviewStatusOrderByLikesDesc(String reviewStatus);
+
+    /**
+     * 排除指定分类的已审核通过指令，按上传时间降序排序
+     */
+    List<PlayerCommand> findByReviewStatusAndCategoryNotInOrderByUploadTimeDesc(String reviewStatus, Collection<String> categories);
 }
