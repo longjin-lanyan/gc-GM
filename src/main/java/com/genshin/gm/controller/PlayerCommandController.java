@@ -369,13 +369,30 @@ public class PlayerCommandController {
     }
 
     /**
+     * 从请求中提取adminToken（支持POST body、请求头、URL参数）
+     */
+    private String extractAdminToken(Map<String, String> body, HttpServletRequest request) {
+        // 优先从POST body读取
+        if (body != null && body.get("adminToken") != null) {
+            return body.get("adminToken");
+        }
+        // 其次从请求头读取（支持反向代理重定向POST→GET的场景）
+        String headerToken = request.getHeader("X-Admin-Token");
+        if (headerToken != null) {
+            return headerToken;
+        }
+        // 最后从URL参数读取
+        return request.getParameter("adminToken");
+    }
+
+    /**
      * 获取所有指令（管理后台 - 需要管理员认证）
      */
-    @PostMapping("/admin/all")
+    @RequestMapping(value = "/admin/all", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<?> getAllCommands(@RequestBody(required = false) Map<String, String> body,
                                             HttpServletRequest request) {
         try {
-            String adminToken = body != null ? body.get("adminToken") : null;
+            String adminToken = extractAdminToken(body, request);
             Map<String, Object> authErr = validateAdminToken(adminToken, request);
             if (authErr != null) {
                 return ResponseEntity.ok(authErr);
@@ -391,11 +408,11 @@ public class PlayerCommandController {
     /**
      * 获取待审核的指令（管理后台 - 需要管理员认证）
      */
-    @PostMapping("/admin/pending")
+    @RequestMapping(value = "/admin/pending", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<?> getPendingCommands(@RequestBody(required = false) Map<String, String> body,
                                                  HttpServletRequest request) {
         try {
-            String adminToken = body != null ? body.get("adminToken") : null;
+            String adminToken = extractAdminToken(body, request);
             Map<String, Object> authErr = validateAdminToken(adminToken, request);
             if (authErr != null) {
                 return ResponseEntity.ok(authErr);
@@ -419,7 +436,7 @@ public class PlayerCommandController {
 
         Map<String, Object> response = new HashMap<>();
 
-        String adminToken = body != null ? body.get("adminToken") : null;
+        String adminToken = extractAdminToken(body, request);
         Map<String, Object> authErr = validateAdminToken(adminToken, request);
         if (authErr != null) {
             return ResponseEntity.ok(authErr);
@@ -460,7 +477,7 @@ public class PlayerCommandController {
 
         Map<String, Object> response = new HashMap<>();
 
-        String adminToken = body != null ? body.get("adminToken") : null;
+        String adminToken = extractAdminToken(body, request);
         Map<String, Object> authErr = validateAdminToken(adminToken, request);
         if (authErr != null) {
             return ResponseEntity.ok(authErr);
@@ -501,7 +518,7 @@ public class PlayerCommandController {
 
         Map<String, Object> response = new HashMap<>();
 
-        String adminToken = body != null ? body.get("adminToken") : null;
+        String adminToken = extractAdminToken(body, request);
         Map<String, Object> authErr = validateAdminToken(adminToken, request);
         if (authErr != null) {
             return ResponseEntity.ok(authErr);

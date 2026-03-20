@@ -426,9 +426,9 @@
         // 加载统计数据
         async function loadStats() {
             try {
-                const response = await fetch('/api/commands/admin/all', {
+                const response = await fetch('/api/commands/admin/all?adminToken=' + encodeURIComponent(adminToken), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
                 if (!response.ok) {
@@ -437,7 +437,7 @@
                     return;
                 }
                 const commands = await response.json();
-                if (commands.success === false || commands.retcode) {
+                if (commands.success === false || (commands.retcode && commands.retcode !== 200)) {
                     alert('认证失败: ' + (commands.message || '未知错误'));
                     return;
                 }
@@ -486,9 +486,9 @@
             listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><div>加载中...</div></div>';
 
             try {
-                const response = await fetch('/api/commands/admin/pending', {
+                const response = await fetch('/api/commands/admin/pending?adminToken=' + encodeURIComponent(adminToken), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
                 if (!response.ok) {
@@ -550,9 +550,9 @@
             listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><div>加载中...</div></div>';
 
             try {
-                const response = await fetch('/api/commands/admin/all', {
+                const response = await fetch('/api/commands/admin/all?adminToken=' + encodeURIComponent(adminToken), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
                 if (!response.ok) {
@@ -615,13 +615,13 @@
         // 查看指令详情
         async function viewCommand(id) {
             try {
-                const response = await fetch('/api/commands/admin/all', {
+                const response = await fetch('/api/commands/admin/all?adminToken=' + encodeURIComponent(adminToken), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
                 const commands = await response.json();
-                if (commands.success === false) { return; }
+                if (commands.success === false || (commands.retcode && commands.retcode !== 200)) { return; }
                 const cmd = commands.find(c => c.id === id);
 
                 if (!cmd) {
@@ -709,10 +709,11 @@
 
             try {
                 const endpoint = currentReviewAction === 'approve' ? 'approve' : 'reject';
-                const response = await fetch(`/api/commands/admin/${currentReviewId}/${endpoint}`, {
+                const response = await fetch(`/api/commands/admin/${currentReviewId}/${endpoint}?adminToken=${encodeURIComponent(adminToken)}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
                     },
                     body: JSON.stringify({ reviewNote, category, adminToken })
                 });
@@ -740,9 +741,9 @@
             }
 
             try {
-                const response = await fetch(`/api/commands/admin/${id}/delete`, {
+                const response = await fetch(`/api/commands/admin/${id}/delete?adminToken=${encodeURIComponent(adminToken)}`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
 
