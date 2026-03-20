@@ -43,12 +43,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Jackson Hibernate5 模块 - 正确序列化Hibernate代理对象 -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-hibernate5</artifactId>
-        </dependency>
-
         <!-- Spring Boot DevTools (可选，用于热部署) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
