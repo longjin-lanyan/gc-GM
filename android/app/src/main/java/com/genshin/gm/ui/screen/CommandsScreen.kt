@@ -309,10 +309,8 @@ private fun CommandCard(
 }
 
 /**
- * Upload form - matches web #upload-form .upload-form exactly:
- *   - Instructions card (#e3f2fd + border-left 4px #667eea)
- *   - Form fields: 指令标题, 指令描述, 指令内容, 分类, 上传者名称
- *   - Submit button
+ * Upload form - matches web #upload-form .upload-form exactly
+ * Web: single .upload-form card with instructions + all form fields inside
  */
 @Composable
 private fun UploadForm(
@@ -321,63 +319,73 @@ private fun UploadForm(
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var command by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("item") }
+    var uploaderName by remember { mutableStateOf("") }
 
+    // Single glass card wrapping everything (matches web .upload-form)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        // Instructions card (matches web: bg #e3f2fd, border-left 4px #667eea)
         item {
-            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "📝 指令上传说明",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = GlassPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "UID占位符：",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = GlassTextColor
-                )
-                Text(
-                    "  • 可以使用 @ 或 @UID 作为UID占位符\n  • 或者直接不写UID，系统会自动添加（推荐）",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassSecondaryText
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("示例：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Column(modifier = Modifier.padding(start = 8.dp)) {
-                    listOf(
-                        "✅ give 201 99 （系统会自动添加UID）",
-                        "✅ give @ 201 99",
-                        "✅ give @UID 201 99",
-                        "✅ tp 2000 300 -1000"
-                    ).forEach {
-                        Text(
-                            "  • $it",
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                            color = GlassSecondaryText
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "⚠️ 注意：不要包含分号(;)、双与号(&&)等特殊字符",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassError
-                )
-            }
-        }
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                alpha = 0.78f,
+                contentPadding = 20.dp
+            ) {
+                // ===== Instructions section (matches web: bg #e3f2fd, border-left 4px #667eea) =====
+                GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "📝 指令上传说明",
+                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
+                        color = GlassPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
 
-        // Form fields (matches web .form-group)
-        item {
-            GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.78f) {
-                Text("指令标题：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
+                    // UID占位符
+                    Text("UID占位符：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // Bullet: 可以使用 @ 或 @UID (with inline code styling)
+                    Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
+                        Text("• 可以使用 ", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                        InlineCode("@")
+                        Text(" 或 ", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                        InlineCode("@UID")
+                        Text(" 作为UID占位符", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                    }
+                    Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
+                        Text("• 或者直接不写UID，系统会自动添加（推荐）", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // 示例
+                    Text("示例：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // Each example: ✅ + code block + description
+                    ExampleRow("give 201 99", "（系统会自动添加UID）")
+                    ExampleRow("give @ 201 99", null)
+                    ExampleRow("give @UID 201 99", null)
+                    ExampleRow("tp 2000 300 -1000", null)
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Warning
+                    Text(
+                        "⚠️ 注意：不要包含分号(;)、双与号(&&)等特殊字符",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = GlassError,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // ===== Form fields (matches web .form-group) =====
+
+                // 指令标题
+                FormLabel("指令标题：")
                 OutlinedTextField(
                     value = title, onValueChange = { title = it },
                     placeholder = { Text("请输入指令标题（必填）") },
@@ -385,40 +393,44 @@ private fun UploadForm(
                     colors = glassTextFieldColors()
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                Text("指令描述：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
+                // 指令描述
+                FormLabel("指令描述：")
                 OutlinedTextField(
                     value = description, onValueChange = { description = it },
                     placeholder = { Text("请描述这个指令的作用（必填）") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
+                    minLines = 3,
                     colors = glassTextFieldColors()
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                Text("指令内容：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
+                // 指令内容
+                FormLabel("指令内容：")
                 OutlinedTextField(
                     value = command, onValueChange = { command = it },
-                    placeholder = { Text("例如: give 201 99 或 tp 2000 300 -1000") },
+                    placeholder = { Text("例如: give 201 99 或 tp 2000 300 -1000（UID会自动添加）") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
+                    minLines = 4,
                     colors = glassTextFieldColors()
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                Text("分类：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
-                // Category chips (matches web select dropdown)
+                // 分类 (matches web <select>)
+                FormLabel("分类：")
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("物品" to "item", "武器" to "weapon", "角色" to "avatar", "任务" to "quest", "场景" to "scene", "其他" to "other").forEach { (label, value) ->
+                    listOf(
+                        "物品" to "item", "武器" to "weapon", "角色" to "avatar",
+                        "任务" to "quest", "场景" to "scene", "其他" to "other"
+                    ).forEach { (label, value) ->
                         GlassChip(
                             label = label,
                             selected = category == value,
@@ -429,17 +441,70 @@ private fun UploadForm(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 上传者名称
+                FormLabel("上传者名称（可选）：")
+                OutlinedTextField(
+                    value = uploaderName, onValueChange = { uploaderName = it },
+                    placeholder = { Text("请输入您的昵称") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    colors = glassTextFieldColors()
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
                 // Submit button (matches web .generate-btn)
                 GlassGradientButton(
                     onClick = { onSubmit(title, description, command, category) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = title.isNotEmpty() && command.isNotEmpty()
                 ) {
-                    Icon(Icons.Default.Upload, null)
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text("提交指令")
                 }
             }
         }
     }
+}
+
+// Inline code element (matches web <code> styling: white bg, padding, rounded)
+@Composable
+private fun InlineCode(text: String) {
+    Surface(
+        color = Color.White,
+        shape = RoundedCornerShape(3.dp)
+    ) {
+        Text(
+            text,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+            color = GlassTextColor
+        )
+    }
+}
+
+// Example row: • ✅ code （description）
+@Composable
+private fun ExampleRow(code: String, desc: String?) {
+    Row(
+        modifier = Modifier.padding(start = 16.dp, top = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("• ✅ ", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+        InlineCode(code)
+        if (desc != null) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(desc, style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+        }
+    }
+}
+
+// Form label (matches web .form-group label)
+@Composable
+private fun FormLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Bold,
+        color = GlassTextColor,
+        modifier = Modifier.padding(bottom = 6.dp)
+    )
 }
