@@ -21,7 +21,7 @@ import com.genshin.gm.ui.component.*
 
 @Composable
 fun HomeScreen(vm: MainViewModel, state: UiState) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("物品", "武器", "角色", "任务")
 
     LaunchedEffect(state.isInitialized) {
@@ -48,7 +48,7 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
                         style = MaterialTheme.typography.bodySmall,
                         color = GlassSecondaryText
                     )
-                    if (state.onlinePlayerCount > 0) {
+                    if (state.isInitialized) {
                         Text(
                             "在线: ${state.onlinePlayerCount}人",
                             style = MaterialTheme.typography.bodySmall,
@@ -237,7 +237,7 @@ private fun GameDataList(
         }
 
         LazyColumn(modifier = Modifier.weight(1f)) {
-            items(filtered, key = { it.id }) { item ->
+            items(filtered, key = { "${it.id}_${it.name}" }) { item ->
                 GlassCard(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                     alpha = 0.72f,
@@ -282,7 +282,7 @@ private fun GameDataList(
                             }
                         } else {
                             IconButton(onClick = { onGenerateQuest(item.id, false) }) {
-                                Icon(Icons.Default.AddTask, "添加任务", tint = GlassPrimary)
+                                Icon(Icons.Default.PlaylistAdd, "添加任务", tint = GlassPrimary)
                             }
                             IconButton(onClick = { onGenerateQuest(item.id, true) }) {
                                 Icon(Icons.Default.CheckCircle, "完成任务", tint = GlassSuccess)

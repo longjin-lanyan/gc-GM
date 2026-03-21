@@ -1,106 +1,190 @@
 package com.genshin.gm.ui.screen
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.genshin.gm.proto.PlayerCommandProto
 import com.genshin.gm.ui.MainViewModel
 import com.genshin.gm.ui.UiState
 import com.genshin.gm.ui.component.*
 
+/**
+ * 玩家指令广场 - matches web index.html community-section layout exactly
+ *
+ * Web structure:
+ *   .status-indicator (top-right: 服务器/在线/UID)
+ *   .sub-menu (指令广场 | 场景 | 角色 | 上传指令)
+ *   .community-list (command card grid)
+ *   .upload-form (upload form with instructions)
+ */
 @Composable
 fun CommandsScreen(vm: MainViewModel, state: UiState) {
-    var showSubmitDialog by remember { mutableStateOf(false) }
-    var selectedSort by remember { mutableStateOf("time") }
+    // Sub-tab: 0=指令广场, 1=场景, 2=角色, 3=上传指令
+    var selectedSubTab by remember { mutableStateOf(0) }
+    var selectedCategory by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         vm.loadApprovedCommands()
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Sort & Submit row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp)) {
+
+        // ===== Status Indicator (matches web .status-indicator) =====
+        GlassCard(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            alpha = 0.78f,
+            elevation = 3.dp,
+            contentPadding = 10.dp
         ) {
-            GlassChip(
-                label = "最新",
-                selected = selectedSort == "time",
-                onClick = {
-                    selectedSort = "time"
-                    vm.loadApprovedCommands(sort = "time")
-                }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            GlassChip(
-                label = "热门",
-                selected = selectedSort == "popular",
-                onClick = {
-                    selectedSort = "popular"
-                    vm.loadApprovedCommands(sort = "popular")
-                }
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            GlassGradientButton(onClick = { showSubmitDialog = true }) {
-                Icon(Icons.Default.Add, null)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("提交指令")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Commands list
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(state.approvedCommands, key = { it.id }) { cmd ->
-                CommandCard(
-                    cmd = cmd,
-                    onLike = { vm.likeCommand(cmd.id) },
-                    onExecute = { vm.executePresetCommand(cmd.id) },
-                    canExecute = state.isLoggedIn && state.activeUid.isNotEmpty()
-                )
-            }
-        }
-
-        // Execute result
-        if (state.executeResult.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Surface(
-                color = if (state.executeResult.startsWith("成功")) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
-                shape = MaterialTheme.shapes.medium,
-                shadowElevation = 2.dp
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    state.executeResult,
-                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (state.executeResult.startsWith("成功")) GlassSuccess else GlassError
+                // 服务器状态
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("服务器: ", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
+                    Text(
+                        if (state.isInitialized) "已连接" else "连接中...",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (state.isInitialized) GlassSuccess else GlassWarning,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                // 在线人数
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("在线: ", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
+                    Text(
+                        "${state.onlinePlayerCount}人",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = GlassPrimary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                // UID
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("UID: ", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
+                    Text(
+                        state.activeUid.ifEmpty { "未选择" },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (state.activeUid.isNotEmpty()) GlassPrimary else GlassSecondaryText,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+
+        // ===== Sub-Menu (matches web .sub-menu: 指令广场 | 场景 | 角色 | 上传指令) =====
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            val subTabs = listOf("指令广场" to "", "场景" to "scene", "角色" to "avatar", "上传指令" to "upload")
+            subTabs.forEachIndexed { index, (label, _) ->
+                GlassChip(
+                    label = label,
+                    selected = selectedSubTab == index,
+                    onClick = {
+                        selectedSubTab = index
+                        if (index < 3) {
+                            selectedCategory = subTabs[index].second
+                            vm.loadApprovedCommands(category = selectedCategory)
+                        }
+                    }
                 )
             }
         }
-    }
 
-    if (showSubmitDialog) {
-        SubmitCommandDialog(
-            onDismiss = { showSubmitDialog = false },
-            onSubmit = { title, desc, cmd, cat ->
-                vm.submitCommand(title, desc, cmd, cat, state.username)
-                showSubmitDialog = false
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // ===== Content based on sub-tab =====
+        if (selectedSubTab == 3) {
+            // Upload form (matches web #upload-form .upload-form)
+            UploadForm(
+                onSubmit = { title, desc, cmd, cat ->
+                    vm.submitCommand(title, desc, cmd, cat, state.username)
+                }
+            )
+        } else {
+            // Command card list (matches web .community-list)
+            if (state.approvedCommands.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    GlassCard(alpha = 0.75f) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Inbox, null, tint = GlassSecondaryText, modifier = Modifier.size(40.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("暂无指令", color = GlassTextColor, fontWeight = FontWeight.Medium)
+                            Text("点击「上传指令」分享你的指令", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                        }
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(state.approvedCommands, key = { "${it.id}_${it.title}" }) { cmd ->
+                        CommandCard(
+                            cmd = cmd,
+                            onLike = { vm.likeCommand(cmd.id) },
+                            onExecute = { vm.executePresetCommand(cmd.id) },
+                            canExecute = state.isLoggedIn && state.activeUid.isNotEmpty()
+                        )
+                    }
+                }
             }
-        )
+
+            // Execute result
+            if (state.executeResult.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    color = if (state.executeResult.startsWith("成功")) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
+                    shape = MaterialTheme.shapes.medium,
+                    shadowElevation = 2.dp
+                ) {
+                    Text(
+                        state.executeResult,
+                        modifier = Modifier.padding(10.dp).fillMaxWidth(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (state.executeResult.startsWith("成功")) GlassSuccess else GlassError
+                    )
+                }
+            }
+        }
     }
 }
 
-// Matches web .command-card styling
+/**
+ * Command Card - matches web .command-card exactly:
+ *   .command-card-header (title + category badge)
+ *   .command-card-description
+ *   .command-card-content (monospace, scrollable)
+ *   .command-card-footer (info + actions with border-top)
+ */
 @Composable
 private fun CommandCard(
     cmd: PlayerCommandProto,
@@ -109,69 +193,129 @@ private fun CommandCard(
     canExecute: Boolean
 ) {
     GlassCard(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
         alpha = 0.78f,
         elevation = 3.dp
     ) {
-        Text(
-            cmd.title,
-            style = MaterialTheme.typography.titleSmall,
-            color = GlassTextColor,
-            fontWeight = FontWeight.Bold
-        )
+        // Header: title + category badge (matches .command-card-header)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                cmd.title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleSmall,
+                color = GlassTextColor,
+                fontWeight = FontWeight.Bold
+            )
+            if (cmd.category.isNotEmpty()) {
+                // Category badge (matches .command-card-category: gradient bg, white text, rounded)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(GlassPrimary, GlassPrimaryDark),
+                                start = Offset(0f, 0f),
+                                end = Offset(100f, 100f)
+                            )
+                        )
+                        .padding(horizontal = 10.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        cmd.category,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        }
+
+        // Description (matches .command-card-description)
         if (cmd.description.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 cmd.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = GlassSecondaryText
             )
         }
+
         Spacer(modifier = Modifier.height(6.dp))
-        // Command content - matches web .command-card-content
+
+        // Command content (matches .command-card-content: monospace, white bg, rounded)
         Surface(
-            color = Color.White.copy(alpha = 0.5f),
-            shape = MaterialTheme.shapes.small
+            color = Color.White.copy(alpha = 0.45f),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 cmd.command,
                 modifier = Modifier.padding(10.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = GlassPrimary,
-                fontWeight = FontWeight.Medium
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 13.sp
+                ),
+                color = GlassTextColor
             )
         }
+
         Spacer(modifier = Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (cmd.category.isNotEmpty()) {
-                GlassChip(label = cmd.category)
-                Spacer(modifier = Modifier.width(8.dp))
-            }
+
+        // Footer (matches .command-card-footer: border-top, info + actions)
+        HorizontalDivider(color = GlassPrimary.copy(alpha = 0.1f))
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Info section (matches .command-card-info)
+            Text("👤 ", fontSize = 12.sp)
             Text(
-                "by ${cmd.uploaderName}",
+                cmd.uploaderName.ifEmpty { "匿名" },
                 style = MaterialTheme.typography.labelSmall,
                 color = GlassSecondaryText
             )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text("👁 ", fontSize = 12.sp)
+            Text("${cmd.views}", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text("❤️ ", fontSize = 12.sp)
+            Text("${cmd.likes}", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
+
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onLike) {
-                Icon(Icons.Default.ThumbUp, "点赞", tint = GlassPrimary)
+
+            // Actions (matches .command-card-actions: like-btn + use-btn)
+            TextButton(
+                onClick = onLike,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+            ) {
+                Text("点赞", style = MaterialTheme.typography.labelSmall, color = GlassPrimary)
             }
-            Text("${cmd.likes}", style = MaterialTheme.typography.labelSmall, color = GlassTextColor)
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(Icons.Default.Visibility, null, modifier = Modifier.size(16.dp), tint = GlassSecondaryText)
-            Text(" ${cmd.views}", style = MaterialTheme.typography.labelSmall, color = GlassTextColor)
             if (canExecute) {
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = onExecute) {
-                    Icon(Icons.Default.PlayArrow, "执行", tint = GlassPrimary)
+                Spacer(modifier = Modifier.width(4.dp))
+                TextButton(
+                    onClick = onExecute,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                ) {
+                    Text("使用", style = MaterialTheme.typography.labelSmall, color = GlassPrimary, fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
 }
 
+/**
+ * Upload form - matches web #upload-form .upload-form exactly:
+ *   - Instructions card (#e3f2fd + border-left 4px #667eea)
+ *   - Form fields: 指令标题, 指令描述, 指令内容, 分类, 上传者名称
+ *   - Submit button
+ */
 @Composable
-private fun SubmitCommandDialog(
-    onDismiss: () -> Unit,
+private fun UploadForm(
     onSubmit: (String, String, String, String) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
@@ -179,89 +323,123 @@ private fun SubmitCommandDialog(
     var command by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White.copy(alpha = 0.95f),
-        titleContentColor = GlassTextColor,
-        textContentColor = GlassTextColor,
-        title = { Text("提交指令", fontWeight = FontWeight.Bold) },
-        text = {
-            Column {
-                // Upload instructions - matches web #e3f2fd + border-left 4px #667eea
-                GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        "指令上传说明",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = GlassPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        "UID占位符：",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = GlassTextColor
-                    )
-                    Text(
-                        "  - 可以使用 @ 或 @UID 作为UID占位符\n  - 或者直接不写UID，系统会自动添加（推荐）",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GlassSecondaryText
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        "示例: give 201 99",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GlassSecondaryText
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        "注意：不要包含分号(;)、双与号(&&)等特殊字符",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GlassError
-                    )
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Instructions card (matches web: bg #e3f2fd, border-left 4px #667eea)
+        item {
+            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "📝 指令上传说明",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = GlassPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "UID占位符：",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = GlassTextColor
+                )
+                Text(
+                    "  • 可以使用 @ 或 @UID 作为UID占位符\n  • 或者直接不写UID，系统会自动添加（推荐）",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = GlassSecondaryText
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("示例：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                Column(modifier = Modifier.padding(start = 8.dp)) {
+                    listOf(
+                        "✅ give 201 99 （系统会自动添加UID）",
+                        "✅ give @ 201 99",
+                        "✅ give @UID 201 99",
+                        "✅ tp 2000 300 -1000"
+                    ).forEach {
+                        Text(
+                            "  • $it",
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                            color = GlassSecondaryText
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "⚠️ 注意：不要包含分号(;)、双与号(&&)等特殊字符",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = GlassError
+                )
+            }
+        }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
+        // Form fields (matches web .form-group)
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.78f) {
+                Text("指令标题：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = title, onValueChange = { title = it },
-                    label = { Text("指令标题") },
                     placeholder = { Text("请输入指令标题（必填）") },
                     modifier = Modifier.fillMaxWidth(), singleLine = true,
                     colors = glassTextFieldColors()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = command, onValueChange = { command = it },
-                    label = { Text("指令内容") },
-                    placeholder = { Text("例如: give 201 99") },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true,
-                    colors = glassTextFieldColors()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text("指令描述：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = description, onValueChange = { description = it },
-                    label = { Text("指令描述 (可选)") },
+                    placeholder = { Text("请描述这个指令的作用（必填）") },
                     modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
                     colors = glassTextFieldColors()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text("指令内容：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
-                    value = category, onValueChange = { category = it },
-                    label = { Text("分类 (可选)") },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    value = command, onValueChange = { command = it },
+                    placeholder = { Text("例如: give 201 99 或 tp 2000 300 -1000") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
                     colors = glassTextFieldColors()
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text("分类：", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                Spacer(modifier = Modifier.height(4.dp))
+                // Category chips (matches web select dropdown)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("物品" to "item", "武器" to "weapon", "角色" to "avatar", "任务" to "quest", "场景" to "scene", "其他" to "other").forEach { (label, value) ->
+                        GlassChip(
+                            label = label,
+                            selected = category == value,
+                            onClick = { category = value }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Submit button (matches web .generate-btn)
+                GlassGradientButton(
+                    onClick = { onSubmit(title, description, command, category) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = title.isNotEmpty() && command.isNotEmpty()
+                ) {
+                    Icon(Icons.Default.Upload, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("提交指令")
+                }
             }
-        },
-        confirmButton = {
-            GlassGradientButton(
-                onClick = { onSubmit(title, description, command, category) },
-                enabled = title.isNotEmpty() && command.isNotEmpty()
-            ) { Text("提交") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消", color = GlassSecondaryText) }
         }
-    )
+    }
 }

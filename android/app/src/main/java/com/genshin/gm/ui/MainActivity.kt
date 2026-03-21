@@ -59,7 +59,7 @@ fun MainApp(vm: MainViewModel = viewModel()) {
     var currentScreen by remember { mutableStateOf(Screen.HOME) }
 
     // Splash animation state
-    var splashPhase by remember { mutableIntStateOf(0) }
+    var splashPhase by remember { mutableStateOf(0) }
     // 0 = waiting (2s), 1 = shrinking bar, 2 = shrinking both, 3 = done
 
     LaunchedEffect(Unit) {
