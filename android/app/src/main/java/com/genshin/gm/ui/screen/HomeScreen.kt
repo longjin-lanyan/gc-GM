@@ -79,6 +79,7 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GameDataList(
     items: List<GameDataItem>,
