@@ -4,23 +4,32 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.genshin.gm.ui.component.GlassGradient
 import com.genshin.gm.ui.screen.*
 import com.genshin.gm.ui.theme.GenshinGMTheme
+import kotlinx.coroutines.delay
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -48,6 +57,45 @@ enum class Screen(val title: String, val icon: @Composable () -> Unit) {
 fun MainApp(vm: MainViewModel = viewModel()) {
     val state by vm.state.collectAsState()
     var currentScreen by remember { mutableStateOf(Screen.HOME) }
+
+    // Splash animation state
+    var splashPhase by remember { mutableIntStateOf(0) }
+    // 0 = waiting (2s), 1 = shrinking bar, 2 = shrinking both, 3 = done
+
+    LaunchedEffect(Unit) {
+        delay(2000L) // Wait 2 seconds
+        splashPhase = 1 // Start shrinking bar
+        delay(600L)
+        splashPhase = 2 // Bar reached text, shrink both
+        delay(500L)
+        splashPhase = 3 // Done, hide title bar
+    }
+
+    // Animation for bar shrink (phase 1): bar width fraction from 1.0 to ~0.35 (text width ratio)
+    val barFraction by animateFloatAsState(
+        targetValue = when (splashPhase) {
+            0 -> 1f
+            1 -> 0.38f  // Shrink to roughly text width
+            else -> 0f
+        },
+        animationSpec = tween(
+            durationMillis = if (splashPhase == 1) 600 else 400,
+            easing = FastOutSlowInEasing
+        ),
+        label = "barFraction"
+    )
+
+    // Animation for overall scale + alpha (phase 2): both shrink to nothing
+    val overallScale by animateFloatAsState(
+        targetValue = if (splashPhase >= 2) 0f else 1f,
+        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        label = "overallScale"
+    )
+    val overallAlpha by animateFloatAsState(
+        targetValue = if (splashPhase >= 2) 0f else 1f,
+        animationSpec = tween(durationMillis = 400),
+        label = "overallAlpha"
+    )
 
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
@@ -84,17 +132,39 @@ fun MainApp(vm: MainViewModel = viewModel()) {
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = Color.Transparent,
             topBar = {
-                TopAppBar(
-                    title = {
+                // Splash title bar - animates away
+                if (splashPhase < 3) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                            .graphicsLayer(
+                                scaleX = overallScale,
+                                scaleY = overallScale,
+                                alpha = overallAlpha
+                            )
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        // The gray bar that shrinks
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(barFraction)
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF1A1B2E).copy(alpha = 0.6f))
+                        )
+                        // Title text
                         Text(
                             "原神GM工具",
-                            color = Color.White
+                            modifier = Modifier.padding(start = 12.dp),
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF1A1B2E).copy(alpha = 0.6f)
-                    )
-                )
+                    }
+                }
+                // After animation: no top bar, more content space
             },
             bottomBar = {
                 NavigationBar(

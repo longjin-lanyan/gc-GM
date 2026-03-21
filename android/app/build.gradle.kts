@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.genshin.gm"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.genshin.gm"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
     }
@@ -92,7 +92,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Core
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
     // Coroutines

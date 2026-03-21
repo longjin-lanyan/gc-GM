@@ -30,19 +30,33 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Resource sync status
+    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp)) {
+        // Resource sync status + online count
         if (state.resourceSyncStatus.isNotEmpty()) {
             GlassCard(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
                 alpha = 0.70f,
                 elevation = 2.dp
             ) {
-                Text(
-                    state.resourceSyncStatus,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassSecondaryText
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        state.resourceSyncStatus,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = GlassSecondaryText
+                    )
+                    if (state.onlinePlayerCount > 0) {
+                        Text(
+                            "在线: ${state.onlinePlayerCount}人",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = GlassPrimary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         }
 
@@ -132,65 +146,71 @@ private fun GameDataList(
     var quantity by remember { mutableStateOf("1") }
 
     Column {
-        // Search field
+        // Search field - compact size
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            label = { Text("搜索物品/角色/武器") },
-            leadingIcon = { Icon(Icons.Default.Search, "搜索") },
-            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("搜索物品/角色/武器", style = MaterialTheme.typography.bodySmall) },
+            leadingIcon = { Icon(Icons.Default.Search, "搜索", modifier = Modifier.size(18.dp)) },
+            modifier = Modifier.fillMaxWidth().height(48.dp),
             singleLine = true,
             colors = glassTextFieldColors(),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            textStyle = MaterialTheme.typography.bodySmall
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        // Generated command display
+        // Generated command display - compact
         if (generatedCommand.isNotEmpty()) {
             GlassCard(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
                 alpha = 0.88f,
-                elevation = 6.dp
+                elevation = 3.dp
             ) {
-                Text("生成的指令:", style = MaterialTheme.typography.labelMedium, color = GlassSecondaryText)
-                Spacer(modifier = Modifier.height(4.dp))
-                Surface(
-                    color = Color.White.copy(alpha = 0.5f),
-                    shape = MaterialTheme.shapes.small
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        generatedCommand,
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = GlassPrimary,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Text("指令:", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(
+                        color = Color.White.copy(alpha = 0.5f),
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            generatedCommand,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = GlassPrimary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
                 if (canExecute) {
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     GlassGradientButton(
                         onClick = { onExecute(generatedCommand) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().height(36.dp),
                         enabled = !isLoading
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
                                 color = Color.White
                             )
                         } else {
-                            Icon(Icons.Default.Send, null)
+                            Icon(Icons.Default.Send, null, modifier = Modifier.size(16.dp))
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("向服务器执行指令")
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("执行", style = MaterialTheme.typography.bodySmall)
                     }
                 } else {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         "请先登录并选择活动UID后执行",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = GlassWarning
                     )
                 }

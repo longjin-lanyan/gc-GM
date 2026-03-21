@@ -30,6 +30,7 @@ data class UiState(
     val generatedCommand: String = "",
     val executeResult: String = "",
     val backgroundImagePath: String? = null,
+    val onlinePlayerCount: Int = 0,
     val isInitialized: Boolean = false,
 ) {
     companion object {
@@ -456,6 +457,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         } catch (e: Exception) {
             _state.update { it.copy(resourceSyncStatus = "同步失败: ${e.message ?: "无法连接服务器"}") }
         }
+        // Fetch online player count
+        fetchOnlineCount()
+    }
+
+    private suspend fun fetchOnlineCount() {
+        try {
+            val resp = protoClient.getOnlinePlayers()
+            if (resp.retcode == 0 && resp.data.isNotEmpty()) {
+                // data is JSON like {"count": 56} or just a number string
+                val count = try {
+                    val json = org.json.JSONObject(resp.data)
+                    json.optInt("count", 0)
+                } catch (_: Exception) {
+                    resp.data.trim().toIntOrNull() ?: 0
+                }
+                _state.update { it.copy(onlinePlayerCount = count) }
+            }
+        } catch (_: Exception) {}
     }
 
     fun syncResources() {

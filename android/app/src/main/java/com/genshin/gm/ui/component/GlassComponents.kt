@@ -54,6 +54,7 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     alpha: Float = 0.78f,
     elevation: Dp = 4.dp,
+    contentPadding: Dp = 12.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shape = RoundedCornerShape(12.dp)
@@ -70,7 +71,7 @@ fun GlassCard(
         contentColor = GlassTextColor,
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(16.dp), content = content)
+        Column(modifier = Modifier.padding(contentPadding), content = content)
     }
 }
 
