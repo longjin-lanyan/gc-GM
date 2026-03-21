@@ -2,6 +2,7 @@ package com.genshin.gm.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -29,7 +30,7 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
             .verticalScroll(rememberScrollState())
     ) {
         // Status card
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.78f) {
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
             if (!state.isLoggedIn) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Warning, null, tint = GlassError)
@@ -66,7 +67,7 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Main card wrapping instructions + form (matches upload form style)
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.82f, contentPadding = 20.dp) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
             // Instructions info card
             GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -101,8 +102,8 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
 
                 quickCommands.forEach { (cmd, label) ->
                     Surface(
-                        color = Color.White.copy(alpha = 0.6f),
-                        shape = MaterialTheme.shapes.medium,
+                        color = Color.White.copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                         onClick = {
                             command = cmd
@@ -184,8 +185,7 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
         if (state.executeResult.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             GlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                alpha = 0.88f
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     "执行结果",

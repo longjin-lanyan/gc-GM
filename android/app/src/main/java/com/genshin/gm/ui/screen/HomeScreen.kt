@@ -2,6 +2,7 @@ package com.genshin.gm.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -35,9 +36,7 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp)) {
         // Resource sync status + online count (always visible)
         GlassCard(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-            alpha = 0.70f,
-            elevation = 2.dp
+            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -69,7 +68,7 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
 
         if (state.isLoading && state.items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                GlassCard(alpha = 0.80f) {
+                GlassCard {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
@@ -87,7 +86,7 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
             }
         } else if (state.items.isEmpty() && !state.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                GlassCard(alpha = 0.80f) {
+                GlassCard {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.CloudOff, null, tint = GlassSecondaryText, modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(8.dp))
@@ -149,7 +148,6 @@ private fun GameDataList(
         // Info card + search (unified style)
         GlassCard(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            alpha = 0.82f,
             contentPadding = 16.dp
         ) {
             GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
@@ -180,9 +178,7 @@ private fun GameDataList(
         // Generated command display
         if (generatedCommand.isNotEmpty()) {
             GlassCard(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-                alpha = 0.88f,
-                elevation = 3.dp
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -191,8 +187,8 @@ private fun GameDataList(
                     Text("指令:", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
                     Spacer(modifier = Modifier.width(6.dp))
                     Surface(
-                        color = Color.White.copy(alpha = 0.5f),
-                        shape = MaterialTheme.shapes.small,
+                        color = Color.White.copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
@@ -256,9 +252,7 @@ private fun GameDataList(
             items(filtered.size) { index ->
                 val item = filtered[index]
                 GlassCard(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                    alpha = 0.72f,
-                    elevation = 2.dp
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

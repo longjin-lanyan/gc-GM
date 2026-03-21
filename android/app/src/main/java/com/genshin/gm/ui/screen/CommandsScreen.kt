@@ -56,8 +56,6 @@ fun CommandsScreen(vm: MainViewModel, state: UiState) {
         // ===== Status Indicator (matches web .status-indicator) =====
         GlassCard(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            alpha = 0.78f,
-            elevation = 3.dp,
             contentPadding = 10.dp
         ) {
             Row(
@@ -139,7 +137,7 @@ fun CommandsScreen(vm: MainViewModel, state: UiState) {
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    GlassCard(alpha = 0.75f) {
+                    GlassCard {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Inbox, null, tint = GlassSecondaryText, modifier = Modifier.size(40.dp))
                             Spacer(modifier = Modifier.height(8.dp))
@@ -199,9 +197,7 @@ private fun CommandCard(
     canExecute: Boolean
 ) {
     GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        alpha = 0.78f,
-        elevation = 3.dp
+        modifier = Modifier.fillMaxWidth()
     ) {
         // Header: title + category badge (matches .command-card-header)
         Row(
@@ -254,8 +250,8 @@ private fun CommandCard(
 
         // Command content (matches .command-card-content: monospace, white bg, rounded)
         Surface(
-            color = Color.White.copy(alpha = 0.45f),
-            shape = RoundedCornerShape(8.dp),
+            color = Color.White.copy(alpha = 0.35f),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
@@ -456,8 +452,6 @@ private fun UploadForm(
                     displayItems.forEach { item ->
                         GlassCard(
                             modifier = Modifier.fillMaxWidth(),
-                            alpha = 0.6f,
-                            elevation = 1.dp,
                             contentPadding = 10.dp
                         ) {
                             Row(
@@ -515,7 +509,6 @@ private fun UploadForm(
             item {
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    alpha = 0.78f,
                     contentPadding = 20.dp
                 ) {
                     // 指令标题

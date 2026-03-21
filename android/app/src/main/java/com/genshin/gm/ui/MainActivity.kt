@@ -168,8 +168,8 @@ fun MainApp(vm: MainViewModel = viewModel()) {
             },
             bottomBar = {
                 NavigationBar(
-                    containerColor = Color(0xFF1A1B2E).copy(alpha = 0.85f),
-                    contentColor = Color.White
+                    containerColor = Color.White.copy(alpha = 0.35f),
+                    contentColor = Color(0xFF667EEA)
                 ) {
                     Screen.entries.forEach { screen ->
                         NavigationBarItem(
@@ -178,11 +178,11 @@ fun MainApp(vm: MainViewModel = viewModel()) {
                             icon = screen.icon,
                             label = { Text(screen.title) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color.White,
-                                selectedTextColor = Color.White,
-                                indicatorColor = Color(0xFF667EEA).copy(alpha = 0.4f),
-                                unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                                unselectedTextColor = Color.White.copy(alpha = 0.6f),
+                                selectedIconColor = Color(0xFF667EEA),
+                                selectedTextColor = Color(0xFF667EEA),
+                                indicatorColor = Color(0xFF667EEA).copy(alpha = 0.15f),
+                                unselectedIconColor = Color(0xFF666666),
+                                unselectedTextColor = Color(0xFF666666),
                             )
                         )
                     }

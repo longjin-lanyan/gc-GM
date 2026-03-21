@@ -2,6 +2,7 @@ package com.genshin.gm.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -29,7 +30,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
             .verticalScroll(rememberScrollState())
     ) {
         // Server settings card
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f, contentPadding = 20.dp) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
             GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "⚙️ 服务器设置",
@@ -87,7 +88,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Resource sync card
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f, contentPadding = 20.dp) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
             GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "📦 资源管理",
@@ -141,7 +142,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Admin panel card
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f, contentPadding = 20.dp) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
             GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "🔐 管理员",
@@ -176,7 +177,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // About card
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f, contentPadding = 20.dp) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
             GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "ℹ️ 关于",
@@ -212,7 +213,7 @@ private fun AdminPanel(vm: MainViewModel, state: UiState, onDismiss: () -> Unit)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White.copy(alpha = 0.95f),
+        containerColor = Color.White.copy(alpha = 0.85f),
         titleContentColor = GlassTextColor,
         textContentColor = GlassTextColor,
         title = { Text("管理面板", fontWeight = FontWeight.Bold) },
@@ -252,8 +253,8 @@ private fun AdminPanel(vm: MainViewModel, state: UiState, onDismiss: () -> Unit)
                     } else {
                         state.pendingCommands.forEach { cmd ->
                             Surface(
-                                color = Color(0xFFF8F9FA),
-                                shape = MaterialTheme.shapes.medium,
+                                color = Color.White.copy(alpha = 0.35f),
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                             ) {
                                 Column(modifier = Modifier.padding(8.dp)) {
