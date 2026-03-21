@@ -1,8 +1,8 @@
 package com.genshin.gm.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,19 +10,24 @@ import java.util.Set;
 /**
  * 玩家指令实体类
  */
-@Document(collection = "player_commands")
+@Entity
+@Table(name = "player_commands")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class PlayerCommand {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     // 指令标题
     private String title;
 
     // 指令描述
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     // 指令内容
+    @Column(columnDefinition = "TEXT")
     private String command;
 
     // 指令分类（物品、角色、武器、任务等）
@@ -38,18 +43,23 @@ public class PlayerCommand {
     private String reviewStatus;
 
     // 审核备注
+    @Column(columnDefinition = "TEXT")
     private String reviewNote;
 
     // 审核时间
     private LocalDateTime reviewTime;
 
     // 点赞数
+    @Column(name = "likes_count")
     private int likes;
 
     // 浏览数
     private int views;
 
     // 点赞的UID列表
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "command_liked_uids", joinColumns = @JoinColumn(name = "command_id"))
+    @Column(name = "uid")
     private Set<String> likedUids;
 
     public PlayerCommand() {
@@ -61,11 +71,11 @@ public class PlayerCommand {
     }
 
     // Getters and Setters
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

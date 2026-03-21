@@ -2557,8 +2557,8 @@
                 } else if (type === 'avatar') {
                     url = `${API_BASE}/commands/approved?category=avatar&sort=time`;
                 } else if (type === 'all') {
-                    // 指令广场显示"其他"分类的指令
-                    url = `${API_BASE}/commands/approved?category=other&sort=time`;
+                    // 指令广场显示除场景和角色以外的所有分类指令
+                    url = `${API_BASE}/commands/approved?exclude=scene,avatar&sort=time`;
                 }
 
                 const response = await fetch(url);

@@ -426,14 +426,23 @@
         // 加载统计数据
         async function loadStats() {
             try {
-                const response = await fetch('/api/commands/admin/all', {
+                const response = await fetch('/api/commands/admin/all?adminToken=' + encodeURIComponent(adminToken), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('loadStats HTTP错误:', response.status, text);
+                    return;
+                }
                 const commands = await response.json();
-                if (commands.success === false) {
-                    alert('认证失败: ' + commands.message);
+                if (commands.success === false || (commands.retcode && commands.retcode !== 200)) {
+                    alert('认证失败: ' + (commands.message || '未知错误'));
+                    return;
+                }
+                if (!Array.isArray(commands)) {
+                    console.error('loadStats: 响应不是数组', commands);
                     return;
                 }
 
@@ -477,13 +486,23 @@
             listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><div>加载中...</div></div>';
 
             try {
-                const response = await fetch('/api/commands/admin/pending', {
+                const response = await fetch('/api/commands/admin/pending?adminToken=' + encodeURIComponent(adminToken), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error('HTTP ' + response.status + ': ' + text.substring(0, 200));
+                }
                 const commands = await response.json();
-                if (commands.success === false) { return; }
+                if (commands.success === false || (commands.retcode && commands.retcode !== 200)) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>' + (commands.message || '认证失败') + '</div></div>';
+                    return;
+                }
+                if (!Array.isArray(commands)) {
+                    throw new Error('响应格式错误: ' + JSON.stringify(commands).substring(0, 200));
+                }
 
                 if (commands.length === 0) {
                     listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>暂无待审核指令</div></div>';
@@ -521,7 +540,7 @@
                 `;
             } catch (error) {
                 console.error('加载待审核指令失败:', error);
-                listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div>加载失败</div></div>';
+                listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div>加载失败: ' + error.message + '</div></div>';
             }
         }
 
@@ -531,13 +550,23 @@
             listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><div>加载中...</div></div>';
 
             try {
-                const response = await fetch('/api/commands/admin/all', {
+                const response = await fetch('/api/commands/admin/all?adminToken=' + encodeURIComponent(adminToken), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error('HTTP ' + response.status + ': ' + text.substring(0, 200));
+                }
                 const commands = await response.json();
-                if (commands.success === false) { return; }
+                if (commands.success === false || (commands.retcode && commands.retcode !== 200)) {
+                    listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div>' + (commands.message || '认证失败') + '</div></div>';
+                    return;
+                }
+                if (!Array.isArray(commands)) {
+                    throw new Error('响应格式错误: ' + JSON.stringify(commands).substring(0, 200));
+                }
 
                 if (commands.length === 0) {
                     listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>暂无指令</div></div>';
@@ -579,21 +608,21 @@
                 `;
             } catch (error) {
                 console.error('加载所有指令失败:', error);
-                listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div>加载失败</div></div>';
+                listDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div>加载失败: ' + error.message + '</div></div>';
             }
         }
 
         // 查看指令详情
         async function viewCommand(id) {
             try {
-                const response = await fetch('/api/commands/admin/all', {
+                const response = await fetch('/api/commands/admin/all?adminToken=' + encodeURIComponent(adminToken), {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
                 const commands = await response.json();
-                if (commands.success === false) { return; }
-                const cmd = commands.find(c => c.id === id);
+                if (commands.success === false || (commands.retcode && commands.retcode !== 200)) { return; }
+                const cmd = commands.find(c => String(c.id) === String(id));
 
                 if (!cmd) {
                     alert('指令不存在');
@@ -680,10 +709,11 @@
 
             try {
                 const endpoint = currentReviewAction === 'approve' ? 'approve' : 'reject';
-                const response = await fetch(`/api/commands/admin/${currentReviewId}/${endpoint}`, {
+                const response = await fetch(`/api/commands/admin/${currentReviewId}/${endpoint}?adminToken=${encodeURIComponent(adminToken)}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
                     },
                     body: JSON.stringify({ reviewNote, category, adminToken })
                 });
@@ -711,9 +741,9 @@
             }
 
             try {
-                const response = await fetch(`/api/commands/admin/${id}/delete`, {
+                const response = await fetch(`/api/commands/admin/${id}/delete?adminToken=${encodeURIComponent(adminToken)}`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', 'X-Admin-Token': adminToken},
                     body: JSON.stringify({ adminToken })
                 });
 

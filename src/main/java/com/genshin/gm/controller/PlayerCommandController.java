@@ -190,6 +190,7 @@ public class PlayerCommandController {
     @GetMapping("/approved")
     public ResponseEntity<List<PlayerCommand>> getApprovedCommands(
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) String exclude,
             @RequestParam(required = false, defaultValue = "time") String sort) {
 
         try {
@@ -197,6 +198,10 @@ public class PlayerCommandController {
 
             if (category != null && !category.isEmpty()) {
                 commands = service.getApprovedCommandsByCategory(category);
+            } else if (exclude != null && !exclude.isEmpty()) {
+                // 排除指定分类，多个用逗号分隔
+                List<String> excludeList = List.of(exclude.split(","));
+                commands = service.getApprovedCommandsExcludeCategories(excludeList);
             } else if ("popular".equals(sort)) {
                 commands = service.getPopularCommands();
             } else {
@@ -214,7 +219,7 @@ public class PlayerCommandController {
      * 增加浏览数
      */
     @PostMapping("/{id}/view")
-    public ResponseEntity<Map<String, Object>> incrementViews(@PathVariable String id) {
+    public ResponseEntity<Map<String, Object>> incrementViews(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         try {
             service.incrementViews(id);
@@ -232,7 +237,7 @@ public class PlayerCommandController {
      */
     @PostMapping("/{id}/like")
     public ResponseEntity<Map<String, Object>> likeCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody Map<String, String> body) {
 
         Map<String, Object> response = new HashMap<>();
@@ -266,7 +271,7 @@ public class PlayerCommandController {
      */
     @PostMapping("/{id}/execute")
     public ResponseEntity<Map<String, Object>> executeCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody Map<String, String> body,
             HttpServletRequest request) {
 
@@ -369,18 +374,36 @@ public class PlayerCommandController {
     }
 
     /**
+     * 从请求中提取adminToken（支持POST body、请求头、URL参数）
+     */
+    private String extractAdminToken(Map<String, String> body, HttpServletRequest request) {
+        // 优先从POST body读取
+        if (body != null && body.get("adminToken") != null) {
+            return body.get("adminToken");
+        }
+        // 其次从请求头读取（支持反向代理重定向POST→GET的场景）
+        String headerToken = request.getHeader("X-Admin-Token");
+        if (headerToken != null) {
+            return headerToken;
+        }
+        // 最后从URL参数读取
+        return request.getParameter("adminToken");
+    }
+
+    /**
      * 获取所有指令（管理后台 - 需要管理员认证）
      */
-    @PostMapping("/admin/all")
+    @RequestMapping(value = "/admin/all", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<?> getAllCommands(@RequestBody(required = false) Map<String, String> body,
                                             HttpServletRequest request) {
-        String adminToken = body != null ? body.get("adminToken") : null;
-        Map<String, Object> authErr = validateAdminToken(adminToken, request);
-        if (authErr != null) {
-            return ResponseEntity.ok(authErr);
-        }
         try {
-            return ResponseEntity.ok(service.getAllCommands());
+            String adminToken = extractAdminToken(body, request);
+            Map<String, Object> authErr = validateAdminToken(adminToken, request);
+            if (authErr != null) {
+                return ResponseEntity.ok(authErr);
+            }
+            List<PlayerCommand> commands = service.getAllCommands();
+            return ResponseEntity.ok(commands != null ? commands : List.of());
         } catch (Exception e) {
             logger.error("获取所有指令失败", e);
             return ResponseEntity.ok(List.of());
@@ -390,16 +413,17 @@ public class PlayerCommandController {
     /**
      * 获取待审核的指令（管理后台 - 需要管理员认证）
      */
-    @PostMapping("/admin/pending")
+    @RequestMapping(value = "/admin/pending", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<?> getPendingCommands(@RequestBody(required = false) Map<String, String> body,
                                                  HttpServletRequest request) {
-        String adminToken = body != null ? body.get("adminToken") : null;
-        Map<String, Object> authErr = validateAdminToken(adminToken, request);
-        if (authErr != null) {
-            return ResponseEntity.ok(authErr);
-        }
         try {
-            return ResponseEntity.ok(service.getPendingCommands());
+            String adminToken = extractAdminToken(body, request);
+            Map<String, Object> authErr = validateAdminToken(adminToken, request);
+            if (authErr != null) {
+                return ResponseEntity.ok(authErr);
+            }
+            List<PlayerCommand> commands = service.getPendingCommands();
+            return ResponseEntity.ok(commands != null ? commands : List.of());
         } catch (Exception e) {
             logger.error("获取待审核指令失败", e);
             return ResponseEntity.ok(List.of());
@@ -411,13 +435,13 @@ public class PlayerCommandController {
      */
     @PostMapping("/admin/{id}/approve")
     public ResponseEntity<Map<String, Object>> approveCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body,
             HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
 
-        String adminToken = body != null ? body.get("adminToken") : null;
+        String adminToken = extractAdminToken(body, request);
         Map<String, Object> authErr = validateAdminToken(adminToken, request);
         if (authErr != null) {
             return ResponseEntity.ok(authErr);
@@ -452,13 +476,13 @@ public class PlayerCommandController {
      */
     @PostMapping("/admin/{id}/reject")
     public ResponseEntity<Map<String, Object>> rejectCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body,
             HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
 
-        String adminToken = body != null ? body.get("adminToken") : null;
+        String adminToken = extractAdminToken(body, request);
         Map<String, Object> authErr = validateAdminToken(adminToken, request);
         if (authErr != null) {
             return ResponseEntity.ok(authErr);
@@ -493,13 +517,13 @@ public class PlayerCommandController {
      */
     @PostMapping("/admin/{id}/delete")
     public ResponseEntity<Map<String, Object>> deleteCommand(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body,
             HttpServletRequest request) {
 
         Map<String, Object> response = new HashMap<>();
 
-        String adminToken = body != null ? body.get("adminToken") : null;
+        String adminToken = extractAdminToken(body, request);
         Map<String, Object> authErr = validateAdminToken(adminToken, request);
         if (authErr != null) {
             return ResponseEntity.ok(authErr);

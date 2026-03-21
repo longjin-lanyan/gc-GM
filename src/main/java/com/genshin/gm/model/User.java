@@ -1,36 +1,46 @@
 package com.genshin.gm.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * 用户模型
  */
-@Document(collection = "users")
+@Entity
+@Table(name = "users")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Indexed(unique = true)
+    @Column(unique = true, nullable = false, length = 50)
     private String username;  // 用户名（唯一）
 
+    @Column(nullable = false)
     private String password;  // 密码（加密存储）
 
     private LocalDateTime createdAt;  // 注册时间
 
     private LocalDateTime lastLoginAt;  // 最后登录时间
 
-    private List<String> verifiedUids;  // 已验证的UID列表
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "user_verified_uids",
+            joinColumns = @JoinColumn(name = "user_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "uid"})
+    )
+    @Column(name = "uid")
+    private Set<String> verifiedUids;  // 已验证的UID集合
 
     public User() {
         this.createdAt = LocalDateTime.now();
-        this.verifiedUids = new ArrayList<>();
+        this.verifiedUids = new LinkedHashSet<>();
     }
 
     public User(String username, String password) {
@@ -41,11 +51,11 @@ public class User {
 
     // Getters and Setters
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -81,11 +91,11 @@ public class User {
         this.lastLoginAt = lastLoginAt;
     }
 
-    public List<String> getVerifiedUids() {
+    public Set<String> getVerifiedUids() {
         return verifiedUids;
     }
 
-    public void setVerifiedUids(List<String> verifiedUids) {
+    public void setVerifiedUids(Set<String> verifiedUids) {
         this.verifiedUids = verifiedUids;
     }
 
@@ -94,11 +104,9 @@ public class User {
      */
     public void addVerifiedUid(String uid) {
         if (this.verifiedUids == null) {
-            this.verifiedUids = new ArrayList<>();
+            this.verifiedUids = new LinkedHashSet<>();
         }
-        if (!this.verifiedUids.contains(uid)) {
-            this.verifiedUids.add(uid);
-        }
+        this.verifiedUids.add(uid);
     }
 
     /**
