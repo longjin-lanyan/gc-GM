@@ -218,6 +218,20 @@ fun GlassChip(
     }
 }
 
+// ==================== Form Label ====================
+// Matches web .form-group label: bold label above input fields
+
+@Composable
+fun GlassFormLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Bold,
+        color = GlassTextColor,
+        modifier = Modifier.padding(bottom = 6.dp)
+    )
+}
+
 // ==================== Info Card ====================
 // Matches web 指令上传说明: #e3f2fd + border-left 4px #667eea
 

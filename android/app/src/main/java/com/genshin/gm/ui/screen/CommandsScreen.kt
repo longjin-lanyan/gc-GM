@@ -408,7 +408,7 @@ private fun UploadForm(
                 // ===== Form fields =====
 
                 // 指令标题
-                FormLabel("指令标题：")
+                GlassFormLabel("指令标题：")
                 OutlinedTextField(
                     value = title, onValueChange = { title = it },
                     placeholder = { Text("请输入指令标题（必填）") },
@@ -419,7 +419,7 @@ private fun UploadForm(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 指令描述
-                FormLabel("指令描述：")
+                GlassFormLabel("指令描述：")
                 OutlinedTextField(
                     value = description, onValueChange = { description = it },
                     placeholder = { Text("请描述这个指令的作用（必填）") },
@@ -431,7 +431,7 @@ private fun UploadForm(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 指令内容
-                FormLabel("指令内容：")
+                GlassFormLabel("指令内容：")
                 OutlinedTextField(
                     value = command, onValueChange = { command = it },
                     placeholder = { Text("例如: give 201 99 或 tp 2000 300 -1000（UID会自动添加）") },
@@ -443,7 +443,7 @@ private fun UploadForm(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 上传者名称
-                FormLabel("上传者名称（可选）：")
+                GlassFormLabel("上传者名称（可选）：")
                 OutlinedTextField(
                     value = uploaderName, onValueChange = { uploaderName = it },
                     placeholder = { Text("请输入您的昵称") },
@@ -496,16 +496,4 @@ private fun ExampleRow(code: String, desc: String?) {
             Text(desc, style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
         }
     }
-}
-
-// Form label (matches web .form-group label)
-@Composable
-private fun FormLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodyMedium,
-        fontWeight = FontWeight.Bold,
-        color = GlassTextColor,
-        modifier = Modifier.padding(bottom = 6.dp)
-    )
 }

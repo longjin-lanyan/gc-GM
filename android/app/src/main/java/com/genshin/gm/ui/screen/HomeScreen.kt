@@ -11,9 +11,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.genshin.gm.proto.GameDataItem
 import com.genshin.gm.ui.MainViewModel
 import com.genshin.gm.ui.UiState
@@ -117,6 +119,7 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
             GameDataList(
                 items = dataList,
                 isQuest = selectedTab == 3,
+                tabName = tabs[selectedTab],
                 onGenerateGive = { id, qty -> vm.generateGiveCommand(id, qty) },
                 onGenerateQuest = { id, finish -> vm.generateQuestCommand(id, finish) },
                 generatedCommand = state.generatedCommand,
@@ -133,6 +136,7 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
 private fun GameDataList(
     items: List<GameDataItem>,
     isQuest: Boolean,
+    tabName: String,
     onGenerateGive: (Int, Int) -> Unit,
     onGenerateQuest: (Int, Boolean) -> Unit,
     generatedCommand: String,
@@ -146,22 +150,57 @@ private fun GameDataList(
     var quantity by remember { mutableStateOf("1") }
 
     Column {
-        // Search field - compact size
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("搜索物品/角色/武器", style = MaterialTheme.typography.bodySmall) },
-            leadingIcon = { Icon(Icons.Default.Search, "搜索", modifier = Modifier.size(18.dp)) },
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-            singleLine = true,
-            colors = glassTextFieldColors(),
-            shape = MaterialTheme.shapes.medium,
-            textStyle = MaterialTheme.typography.bodySmall
-        )
+        // Info card + search (unified style)
+        GlassCard(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            alpha = 0.82f,
+            contentPadding = 16.dp
+        ) {
+            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "📋 ${tabName}列表",
+                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
+                    color = GlassPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(10.dp))
 
-        Spacer(modifier = Modifier.height(6.dp))
+                Text("使用方式：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
+                    Text("• 搜索并选择${tabName}，自动生成GM指令", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                }
+                if (!isQuest) {
+                    Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
+                        Text("• 点击 + 按钮设置数量并生成给予指令", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                    }
+                } else {
+                    Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
+                        Text("• 点击按钮添加任务或直接完成任务", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                    }
+                }
+                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
+                    Text("• 生成指令后可一键执行到服务器", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+                }
+            }
 
-        // Generated command display - compact
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Search field
+            GlassFormLabel("搜索${tabName}：")
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("输入名称或ID搜索") },
+                leadingIcon = { Icon(Icons.Default.Search, "搜索", modifier = Modifier.size(18.dp)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = glassTextFieldColors(),
+                shape = MaterialTheme.shapes.medium
+            )
+        }
+
+        // Generated command display
         if (generatedCommand.isNotEmpty()) {
             GlassCard(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
@@ -182,7 +221,7 @@ private fun GameDataList(
                         Text(
                             generatedCommand,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                             color = GlassPrimary,
                             fontWeight = FontWeight.Medium
                         )
