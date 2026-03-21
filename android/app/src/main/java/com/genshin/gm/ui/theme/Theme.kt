@@ -1,11 +1,8 @@
 package com.genshin.gm.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
 val GenshinPurple = Color(0xFF667EEA)
 val GenshinPurpleDark = Color(0xFF764BA2)
@@ -18,8 +15,8 @@ private val DarkColorScheme = darkColorScheme(
     primary = GenshinPurple,
     secondary = GenshinPurpleDark,
     tertiary = GenshinGold,
-    background = GenshinBackground,
-    surface = GenshinSurface,
+    background = Color.Transparent,
+    surface = Color.Transparent,
     surfaceVariant = GenshinCard,
     onPrimary = Color.White,
     onSecondary = Color.White,
@@ -30,16 +27,8 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun GenshinGMTheme(content: @Composable () -> Unit) {
-    val colorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val context = LocalContext.current
-        if (isSystemInDarkTheme()) dynamicDarkColorScheme(context)
-        else DarkColorScheme
-    } else {
-        DarkColorScheme
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = DarkColorScheme,
         typography = Typography(),
         content = content
     )

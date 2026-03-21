@@ -9,12 +9,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.genshin.gm.proto.PlayerCommandProto
 import com.genshin.gm.ui.MainViewModel
 import com.genshin.gm.ui.UiState
+import com.genshin.gm.ui.component.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommandsScreen(vm: MainViewModel, state: UiState) {
     var showSubmitDialog by remember { mutableStateOf(false) }
@@ -30,32 +32,32 @@ fun CommandsScreen(vm: MainViewModel, state: UiState) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FilterChip(
+            GlassChip(
+                label = "最新",
                 selected = selectedSort == "time",
                 onClick = {
                     selectedSort = "time"
                     vm.loadApprovedCommands(sort = "time")
-                },
-                label = { Text("最新") }
+                }
             )
             Spacer(modifier = Modifier.width(8.dp))
-            FilterChip(
+            GlassChip(
+                label = "热门",
                 selected = selectedSort == "popular",
                 onClick = {
                     selectedSort = "popular"
                     vm.loadApprovedCommands(sort = "popular")
-                },
-                label = { Text("热门") }
+                }
             )
             Spacer(modifier = Modifier.weight(1f))
-            FilledTonalButton(onClick = { showSubmitDialog = true }) {
+            GlassGradientButton(onClick = { showSubmitDialog = true }) {
                 Icon(Icons.Default.Add, null)
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("提交指令")
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Commands list
         LazyColumn(modifier = Modifier.weight(1f)) {
@@ -71,17 +73,21 @@ fun CommandsScreen(vm: MainViewModel, state: UiState) {
 
         // Execute result
         if (state.executeResult.isNotEmpty()) {
-            Card(
+            GlassCard(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                )
+                alpha = 0.85f
             ) {
-                Text(
-                    state.executeResult,
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Surface(
+                    color = if (state.executeResult.startsWith("成功")) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        state.executeResult,
+                        modifier = Modifier.padding(10.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (state.executeResult.startsWith("成功")) GlassSuccess else GlassError
+                    )
+                }
             }
         }
     }
@@ -104,58 +110,58 @@ private fun CommandCard(
     onExecute: () -> Unit,
     canExecute: Boolean
 ) {
-    Card(
+    GlassCard(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        alpha = 0.5f
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(cmd.title, style = MaterialTheme.typography.titleSmall)
-            if (cmd.description.isNotEmpty()) {
-                Text(
-                    cmd.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shape = MaterialTheme.shapes.small
-            ) {
-                Text(
-                    cmd.command,
-                    modifier = Modifier.padding(8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (cmd.category.isNotEmpty()) {
-                    AssistChip(
-                        onClick = {},
-                        label = { Text(cmd.category, style = MaterialTheme.typography.labelSmall) }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    "by ${cmd.uploaderName}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = onLike) {
-                    Icon(Icons.Default.ThumbUp, "点赞")
-                }
-                Text("${cmd.likes}", style = MaterialTheme.typography.labelSmall)
+        Text(
+            cmd.title,
+            style = MaterialTheme.typography.titleSmall,
+            color = GlassTextColor,
+            fontWeight = FontWeight.Bold
+        )
+        if (cmd.description.isNotEmpty()) {
+            Text(
+                cmd.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = GlassSecondaryText
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Surface(
+            color = Color(0xFFF5F5F5),
+            shape = MaterialTheme.shapes.small
+        ) {
+            Text(
+                cmd.command,
+                modifier = Modifier.padding(8.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = GlassPrimary
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (cmd.category.isNotEmpty()) {
+                GlassChip(label = cmd.category)
                 Spacer(modifier = Modifier.width(8.dp))
-                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(16.dp))
-                Text(" ${cmd.views}", style = MaterialTheme.typography.labelSmall)
-                if (canExecute) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FilledTonalIconButton(onClick = onExecute) {
-                        Icon(Icons.Default.PlayArrow, "执行")
-                    }
+            }
+            Text(
+                "by ${cmd.uploaderName}",
+                style = MaterialTheme.typography.labelSmall,
+                color = GlassSecondaryText
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = onLike) {
+                Icon(Icons.Default.ThumbUp, "点赞", tint = GlassPrimary)
+            }
+            Text("${cmd.likes}", style = MaterialTheme.typography.labelSmall, color = GlassTextColor)
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Default.Visibility, null, modifier = Modifier.size(16.dp), tint = GlassSecondaryText)
+            Text(" ${cmd.views}", style = MaterialTheme.typography.labelSmall, color = GlassTextColor)
+            if (canExecute) {
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = onExecute) {
+                    Icon(Icons.Default.PlayArrow, "执行", tint = GlassPrimary)
                 }
             }
         }
@@ -174,42 +180,86 @@ private fun SubmitCommandDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("提交指令") },
+        containerColor = Color.White.copy(alpha = 0.95f),
+        titleContentColor = GlassTextColor,
+        textContentColor = GlassTextColor,
+        title = { Text("提交指令", fontWeight = FontWeight.Bold) },
         text = {
             Column {
+                // Upload instructions card (matching the web UI style)
+                Surface(
+                    color = Color(0xFFF8F9FA),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "指令上传说明",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = GlassPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "UID占位符：",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = GlassTextColor
+                        )
+                        Text(
+                            "  - 可以使用 @ 或 @UID 作为UID占位符\n  - 或者直接不写UID，系统会自动添加（推荐）",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = GlassSecondaryText
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "示例: give 201 99",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = GlassSecondaryText
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(
                     value = title, onValueChange = { title = it },
-                    label = { Text("标题") },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true
+                    label = { Text("指令标题") },
+                    placeholder = { Text("请输入指令标题（必填）") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    colors = glassTextFieldColors()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = command, onValueChange = { command = it },
                     label = { Text("指令内容") },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true
+                    placeholder = { Text("例如: give 201 99") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    colors = glassTextFieldColors()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = description, onValueChange = { description = it },
-                    label = { Text("描述 (可选)") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("指令描述 (可选)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = glassTextFieldColors()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = category, onValueChange = { category = it },
                     label = { Text("分类 (可选)") },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    colors = glassTextFieldColors()
                 )
             }
         },
         confirmButton = {
-            Button(
+            GlassGradientButton(
                 onClick = { onSubmit(title, description, command, category) },
                 enabled = title.isNotEmpty() && command.isNotEmpty()
             ) { Text("提交") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = onDismiss) { Text("取消", color = GlassSecondaryText) }
         }
     )
 }

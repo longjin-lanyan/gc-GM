@@ -9,6 +9,7 @@ import com.genshin.gm.data.repository.ResourceManager
 import com.genshin.gm.proto.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.File
 
 data class UiState(
     val isLoggedIn: Boolean = false,
@@ -16,7 +17,7 @@ data class UiState(
     val sessionToken: String = "",
     val activeUid: String = "",
     val verifiedUids: List<String> = emptyList(),
-    val serverUrl: String = "http://127.0.0.1:8080",
+    val serverUrl: String = DEFAULT_SERVER_URL,
     val isLoading: Boolean = false,
     val message: String = "",
     val items: List<GameDataItem> = emptyList(),
@@ -28,7 +29,15 @@ data class UiState(
     val resourceSyncStatus: String = "",
     val generatedCommand: String = "",
     val executeResult: String = "",
-)
+    val backgroundImagePath: String? = null,
+    val isInitialized: Boolean = false,
+) {
+    companion object {
+        const val DEFAULT_SERVER_URL = "http://110.42.109.118:8088"
+    }
+}
+
+private const val DEFAULT_SERVER_URL = UiState.DEFAULT_SERVER_URL
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -36,8 +45,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
-    private var protoClient: ProtoClient? = null
-    private var resourceManager: ResourceManager? = null
+    // Eagerly initialize with default URL to prevent NPE
+    private var protoClient: ProtoClient = ProtoClient(DEFAULT_SERVER_URL)
+    private var resourceManager: ResourceManager = ResourceManager(app, DEFAULT_SERVER_URL)
 
     init {
         viewModelScope.launch {
@@ -47,10 +57,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val uid = sessionManager.getActiveUid()
 
             _state.update { it.copy(serverUrl = url) }
-            initClient(url)
 
-            // 每次启动自动热更资源
-            syncResources()
+            // Re-initialize if stored URL differs from default
+            if (url != DEFAULT_SERVER_URL) {
+                initClient(url)
+            }
+
+            // Sync resources (non-blocking if server unreachable)
+            syncResourcesInternal()
+
+            // Load background image
+            loadBackground()
 
             if (token != null && username != null) {
                 _state.update {
@@ -61,14 +78,31 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         activeUid = uid ?: ""
                     )
                 }
-                refreshUserInfo()
+                try {
+                    refreshUserInfo()
+                } catch (_: Exception) {}
             }
+
+            // Auto-load game data after init
+            loadGameDataInternal()
+
+            _state.update { it.copy(isInitialized = true) }
         }
     }
 
     private fun initClient(url: String) {
         protoClient = ProtoClient(url)
         resourceManager = ResourceManager(getApplication(), url)
+    }
+
+    private fun loadBackground() {
+        val bgDir = File(getApplication<Application>().filesDir, "data/bg")
+        val bgFile = bgDir.listFiles()?.firstOrNull {
+            it.isFile && (it.name.endsWith(".jpg") || it.name.endsWith(".png") || it.name.endsWith(".jpeg"))
+        }
+        if (bgFile != null) {
+            _state.update { it.copy(backgroundImagePath = bgFile.absolutePath) }
+        }
     }
 
     fun updateServerUrl(url: String) {
@@ -85,10 +119,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, message = "") }
             try {
-                val resp = protoClient!!.register(username, password)
+                val resp = protoClient.register(username, password)
                 _state.update { it.copy(isLoading = false, message = resp.message) }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, message = "注册失败: ${e.message}") }
+                _state.update { it.copy(isLoading = false, message = "注册失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -97,7 +131,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, message = "") }
             try {
-                val resp = protoClient!!.login(username, password)
+                val resp = protoClient.login(username, password)
                 if (resp.success) {
                     sessionManager.saveLogin(resp.sessionToken, resp.username)
                     _state.update {
@@ -110,10 +144,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     }
                     refreshUserInfo()
                 } else {
-                    _state.update { it.copy(isLoading = false, message = resp.message) }
+                    _state.update { it.copy(isLoading = false, message = resp.message.ifEmpty { "登录失败" }) }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, message = "登录失败: ${e.message}") }
+                _state.update { it.copy(isLoading = false, message = "登录失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -121,7 +155,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun logout() {
         viewModelScope.launch {
             try {
-                protoClient?.logout(_state.value.sessionToken)
+                protoClient.logout(_state.value.sessionToken)
             } catch (_: Exception) {}
             sessionManager.clearLogin()
             _state.update {
@@ -133,15 +167,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun refreshUserInfo() {
-        viewModelScope.launch {
-            try {
-                val resp = protoClient!!.getUserInfo(_state.value.sessionToken)
-                if (resp.success) {
-                    _state.update { it.copy(verifiedUids = resp.verifiedUidsList) }
-                }
-            } catch (_: Exception) {}
-        }
+    private suspend fun refreshUserInfo() {
+        try {
+            val resp = protoClient.getUserInfo(_state.value.sessionToken)
+            if (resp.success) {
+                _state.update { it.copy(verifiedUids = resp.verifiedUidsList) }
+            }
+        } catch (_: Exception) {}
     }
 
     fun setActiveUid(uid: String) {
@@ -157,10 +189,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, message = "") }
             try {
-                val resp = protoClient!!.sendVerificationCode(uid)
+                val resp = protoClient.sendVerificationCode(uid)
                 _state.update { it.copy(isLoading = false, message = resp.message) }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, message = "发送失败: ${e.message}") }
+                _state.update { it.copy(isLoading = false, message = "发送失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -169,14 +201,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, message = "") }
             try {
-                val resp = protoClient!!.verifyCode(uid, code)
+                val resp = protoClient.verifyCode(uid, code)
                 _state.update { it.copy(isLoading = false, message = resp.message) }
                 if (resp.success) {
-                    // Auto-bind UID after verification
                     bindUid(uid)
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, message = "验证失败: ${e.message}") }
+                _state.update { it.copy(isLoading = false, message = "验证失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -184,11 +215,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun bindUid(uid: String) {
         viewModelScope.launch {
             try {
-                val resp = protoClient!!.addUid(_state.value.sessionToken, uid)
+                val resp = protoClient.addUid(_state.value.sessionToken, uid)
                 _state.update { it.copy(message = resp.message) }
                 if (resp.success) refreshUserInfo()
             } catch (e: Exception) {
-                _state.update { it.copy(message = "绑定失败: ${e.message}") }
+                _state.update { it.copy(message = "绑定失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -196,7 +227,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun unbindUid(uid: String) {
         viewModelScope.launch {
             try {
-                val resp = protoClient!!.removeUid(_state.value.sessionToken, uid)
+                val resp = protoClient.removeUid(_state.value.sessionToken, uid)
                 _state.update { it.copy(message = resp.message) }
                 if (resp.success) {
                     refreshUserInfo()
@@ -205,72 +236,74 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(message = "解绑失败: ${e.message}") }
+                _state.update { it.copy(message = "解绑失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
 
     // ==================== Game Data ====================
 
+    private suspend fun loadGameDataInternal() {
+        _state.update { it.copy(isLoading = true) }
+        try {
+            // Try local cache first
+            val localItems = resourceManager.parseGameData("Item.txt")
+            val localWeapons = resourceManager.parseGameData("Weapon.txt")
+            val localAvatars = resourceManager.parseGameData("Avatar.txt")
+            val localQuests = resourceManager.parseGameData("Quest.txt")
+
+            if (localItems.isNotEmpty()) {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        items = localItems.map { (id, name) ->
+                            GameDataItem.newBuilder().setId(id).setName(name).build()
+                        },
+                        weapons = localWeapons.map { (id, name) ->
+                            GameDataItem.newBuilder().setId(id).setName(name).build()
+                        },
+                        avatars = localAvatars.map { (id, name) ->
+                            GameDataItem.newBuilder().setId(id).setName(name).build()
+                        },
+                        quests = localQuests.map { (id, name) ->
+                            GameDataItem.newBuilder().setId(id).setName(name).build()
+                        },
+                    )
+                }
+            } else {
+                // Fallback to server proto API
+                val items = protoClient.getItems()
+                val weapons = protoClient.getWeapons()
+                val avatars = protoClient.getAvatars()
+                val quests = protoClient.getQuests()
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        items = items.itemsList,
+                        weapons = weapons.itemsList,
+                        avatars = avatars.itemsList,
+                        quests = quests.itemsList,
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            _state.update { it.copy(isLoading = false, message = "加载数据失败: ${e.message ?: "无法连接服务器"}") }
+        }
+    }
+
     fun loadGameData() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            try {
-                // 优先从本地热更缓存加载
-                val rm = resourceManager
-                val localItems = rm?.parseGameData("Item.txt")
-                val localWeapons = rm?.parseGameData("Weapon.txt")
-                val localAvatars = rm?.parseGameData("Avatar.txt")
-                val localQuests = rm?.parseGameData("Quest.txt")
-
-                if (!localItems.isNullOrEmpty()) {
-                    // 使用本地缓存数据
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            items = localItems.map { (id, name) ->
-                                GameDataItem.newBuilder().setId(id).setName(name).build()
-                            },
-                            weapons = (localWeapons ?: emptyList()).map { (id, name) ->
-                                GameDataItem.newBuilder().setId(id).setName(name).build()
-                            },
-                            avatars = (localAvatars ?: emptyList()).map { (id, name) ->
-                                GameDataItem.newBuilder().setId(id).setName(name).build()
-                            },
-                            quests = (localQuests ?: emptyList()).map { (id, name) ->
-                                GameDataItem.newBuilder().setId(id).setName(name).build()
-                            },
-                        )
-                    }
-                } else {
-                    // 本地无缓存，从服务端 proto 接口拉取
-                    val items = protoClient!!.getItems()
-                    val weapons = protoClient!!.getWeapons()
-                    val avatars = protoClient!!.getAvatars()
-                    val quests = protoClient!!.getQuests()
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            items = items.itemsList,
-                            weapons = weapons.itemsList,
-                            avatars = avatars.itemsList,
-                            quests = quests.itemsList,
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, message = "加载数据失败: ${e.message}") }
-            }
+            loadGameDataInternal()
         }
     }
 
     fun generateGiveCommand(itemId: Int, quantity: Int) {
         viewModelScope.launch {
             try {
-                val resp = protoClient!!.generateGiveCommand(itemId, quantity)
+                val resp = protoClient.generateGiveCommand(itemId, quantity)
                 _state.update { it.copy(generatedCommand = resp.command) }
             } catch (e: Exception) {
-                _state.update { it.copy(message = "生成指令失败: ${e.message}") }
+                _state.update { it.copy(message = "生成指令失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -278,11 +311,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun generateQuestCommand(questId: Int, isFinish: Boolean) {
         viewModelScope.launch {
             try {
-                val resp = if (isFinish) protoClient!!.generateQuestFinishCommand(questId)
-                else protoClient!!.generateQuestAddCommand(questId)
+                val resp = if (isFinish) protoClient.generateQuestFinishCommand(questId)
+                else protoClient.generateQuestAddCommand(questId)
                 _state.update { it.copy(generatedCommand = resp.command) }
             } catch (e: Exception) {
-                _state.update { it.copy(message = "生成指令失败: ${e.message}") }
+                _state.update { it.copy(message = "生成指令失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -293,18 +326,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, executeResult = "") }
             try {
-                val resp = protoClient!!.executeCustomCommand(
+                val resp = protoClient.executeCustomCommand(
                     _state.value.activeUid, command, _state.value.sessionToken
                 )
                 _state.update {
                     it.copy(
                         isLoading = false,
                         executeResult = if (resp.success) "成功: ${resp.data}" else "失败: ${resp.message}",
-                        message = resp.message
+                        message = if (resp.success) "指令执行成功" else resp.message
                     )
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, executeResult = "执行失败: ${e.message}") }
+                _state.update { it.copy(isLoading = false, executeResult = "执行失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -313,18 +346,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, executeResult = "") }
             try {
-                val resp = protoClient!!.executePresetCommand(
+                val resp = protoClient.executePresetCommand(
                     id, _state.value.activeUid, _state.value.sessionToken
                 )
                 _state.update {
                     it.copy(
                         isLoading = false,
                         executeResult = if (resp.success) "成功: ${resp.data}" else "失败: ${resp.message}",
-                        message = resp.message
+                        message = if (resp.success) "指令执行成功" else resp.message
                     )
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, executeResult = "执行失败: ${e.message}") }
+                _state.update { it.copy(isLoading = false, executeResult = "执行失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -334,10 +367,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun loadApprovedCommands(category: String = "", sort: String = "time") {
         viewModelScope.launch {
             try {
-                val resp = protoClient!!.getApprovedCommands(category = category, sort = sort)
+                val resp = protoClient.getApprovedCommands(category = category, sort = sort)
                 _state.update { it.copy(approvedCommands = resp.commandsList) }
             } catch (e: Exception) {
-                _state.update { it.copy(message = "加载指令失败: ${e.message}") }
+                _state.update { it.copy(message = "加载指令失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -347,10 +380,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, message = "") }
             try {
-                val resp = protoClient!!.submitCommand(title, description, command, category, uploaderName)
+                val resp = protoClient.submitCommand(title, description, command, category, uploaderName)
                 _state.update { it.copy(isLoading = false, message = resp.message) }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, message = "提交失败: ${e.message}") }
+                _state.update { it.copy(isLoading = false, message = "提交失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -358,11 +391,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun likeCommand(id: Long) {
         viewModelScope.launch {
             try {
-                val resp = protoClient!!.likeCommand(id, _state.value.activeUid)
+                val resp = protoClient.likeCommand(id, _state.value.activeUid)
                 _state.update { it.copy(message = resp.message) }
                 loadApprovedCommands()
             } catch (e: Exception) {
-                _state.update { it.copy(message = "点赞失败: ${e.message}") }
+                _state.update { it.copy(message = "点赞失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -372,10 +405,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun loadPendingCommands(adminToken: String) {
         viewModelScope.launch {
             try {
-                val resp = protoClient!!.adminGetPending(adminToken)
+                val resp = protoClient.adminGetPending(adminToken)
                 _state.update { it.copy(pendingCommands = resp.commandsList) }
             } catch (e: Exception) {
-                _state.update { it.copy(message = "加载失败: ${e.message}") }
+                _state.update { it.copy(message = "加载失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -383,11 +416,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun approveCommand(id: Long, adminToken: String, reviewNote: String = "") {
         viewModelScope.launch {
             try {
-                protoClient!!.adminApprove(id, adminToken, reviewNote)
+                protoClient.adminApprove(id, adminToken, reviewNote)
                 _state.update { it.copy(message = "审核通过") }
                 loadPendingCommands(adminToken)
             } catch (e: Exception) {
-                _state.update { it.copy(message = "操作失败: ${e.message}") }
+                _state.update { it.copy(message = "操作失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
@@ -395,31 +428,36 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun rejectCommand(id: Long, adminToken: String, reviewNote: String = "") {
         viewModelScope.launch {
             try {
-                protoClient!!.adminReject(id, adminToken, reviewNote)
+                protoClient.adminReject(id, adminToken, reviewNote)
                 _state.update { it.copy(message = "已拒绝") }
                 loadPendingCommands(adminToken)
             } catch (e: Exception) {
-                _state.update { it.copy(message = "操作失败: ${e.message}") }
+                _state.update { it.copy(message = "操作失败: ${e.message ?: "网络连接失败"}") }
             }
         }
     }
 
     // ==================== Resources ====================
 
+    private suspend fun syncResourcesInternal() {
+        _state.update { it.copy(resourceSyncStatus = "正在同步资源...") }
+        try {
+            val updated = resourceManager.syncResources()
+            _state.update {
+                it.copy(
+                    resourceSyncStatus = if (updated.isEmpty()) "资源已是最新"
+                    else "已更新 ${updated.size} 个文件"
+                )
+            }
+        } catch (e: Exception) {
+            _state.update { it.copy(resourceSyncStatus = "同步失败: ${e.message ?: "无法连接服务器"}") }
+        }
+    }
+
     fun syncResources() {
         viewModelScope.launch {
-            _state.update { it.copy(resourceSyncStatus = "正在同步资源...") }
-            try {
-                val updated = resourceManager!!.syncResources()
-                _state.update {
-                    it.copy(
-                        resourceSyncStatus = if (updated.isEmpty()) "资源已是最新"
-                        else "已更新 ${updated.size} 个文件"
-                    )
-                }
-            } catch (e: Exception) {
-                _state.update { it.copy(resourceSyncStatus = "同步失败: ${e.message}") }
-            }
+            syncResourcesInternal()
+            loadBackground()
         }
     }
 
