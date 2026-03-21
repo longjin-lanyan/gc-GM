@@ -378,11 +378,34 @@ private fun UploadForm(
                         color = GlassError,
                         fontWeight = FontWeight.Bold
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 分类选择 - 放在说明卡片内
+                    Text("选择分类：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(
+                            "物品" to "item", "武器" to "weapon", "角色" to "avatar",
+                            "任务" to "quest", "场景" to "scene", "其他" to "other"
+                        ).forEach { (label, value) ->
+                            GlassChip(
+                                label = label,
+                                selected = category == value,
+                                onClick = { category = value }
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // ===== Form fields (matches web .form-group) =====
+                // ===== Form fields =====
 
                 // 指令标题
                 FormLabel("指令标题：")
@@ -416,28 +439,6 @@ private fun UploadForm(
                     minLines = 4,
                     colors = glassTextFieldColors()
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 分类 (matches web <select>)
-                FormLabel("分类：")
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(
-                        "物品" to "item", "武器" to "weapon", "角色" to "avatar",
-                        "任务" to "quest", "场景" to "scene", "其他" to "other"
-                    ).forEach { (label, value) ->
-                        GlassChip(
-                            label = label,
-                            selected = category == value,
-                            onClick = { category = value }
-                        )
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
