@@ -9,6 +9,7 @@ import com.genshin.gm.proto.*;
 import com.genshin.gm.service.*;
 import com.genshin.gm.util.CommandProcessor;
 import com.genshin.gm.util.SecurityLogger;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -394,10 +395,23 @@ public class ProtoApiController {
     }
 
     private byte[] toOpenCommandResult(OpenCommandResponse resp) {
+        String dataStr = "";
+        if (resp.getData() != null) {
+            if (resp.getData() instanceof String) {
+                dataStr = (String) resp.getData();
+            } else {
+                // Serialize Map/Object to proper JSON instead of Java toString()
+                try {
+                    dataStr = new ObjectMapper().writeValueAsString(resp.getData());
+                } catch (Exception e) {
+                    dataStr = resp.getData().toString();
+                }
+            }
+        }
         return OpenCommandResult.newBuilder()
                 .setRetcode(resp.getRetcode())
                 .setMessage(resp.getMessage() != null ? resp.getMessage() : "")
-                .setData(resp.getData() != null ? resp.getData().toString() : "")
+                .setData(dataStr)
                 .build().toByteArray();
     }
 

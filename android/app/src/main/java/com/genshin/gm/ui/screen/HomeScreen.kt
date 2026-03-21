@@ -33,32 +33,28 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        // Resource sync status + online count
-        if (state.resourceSyncStatus.isNotEmpty()) {
-            GlassCard(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-                alpha = 0.70f,
-                elevation = 2.dp
+        // Resource sync status + online count (always visible)
+        GlassCard(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+            alpha = 0.70f,
+            elevation = 2.dp
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        state.resourceSyncStatus,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GlassSecondaryText
-                    )
-                    if (state.isInitialized) {
-                        Text(
-                            "在线: ${state.onlinePlayerCount}人",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = GlassPrimary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
+                Text(
+                    state.resourceSyncStatus.ifEmpty { "就绪" },
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = GlassSecondaryText
+                )
+                Text(
+                    "在线: ${state.onlinePlayerCount}人",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = GlassPrimary,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
 
@@ -163,25 +159,6 @@ private fun GameDataList(
                     color = GlassPrimary,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text("使用方式：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 搜索并选择${tabName}，自动生成GM指令", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-                if (!isQuest) {
-                    Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                        Text("• 点击 + 按钮设置数量并生成给予指令", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                    }
-                } else {
-                    Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                        Text("• 点击按钮添加任务或直接完成任务", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                    }
-                }
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 生成指令后可一键执行到服务器", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -276,7 +253,8 @@ private fun GameDataList(
         }
 
         LazyColumn(modifier = Modifier.weight(1f)) {
-            items(filtered, key = { "${it.id}_${it.name}" }) { item ->
+            items(filtered.size) { index ->
+                val item = filtered[index]
                 GlassCard(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                     alpha = 0.72f,

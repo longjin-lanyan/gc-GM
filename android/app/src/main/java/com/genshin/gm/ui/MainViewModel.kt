@@ -84,6 +84,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 } catch (_: Exception) {}
             }
 
+            // Fetch online player count independently
+            try { fetchOnlineCount() } catch (_: Exception) {}
+
             // Auto-load game data after init
             loadGameDataInternal()
 
@@ -464,17 +467,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun fetchOnlineCount() {
         try {
             val resp = protoClient.getOnlinePlayers()
-            if (resp.retcode == 0 && resp.data.isNotEmpty()) {
-                // data is JSON like {"count": 56} or just a number string
+            // Accept retcode 0 or 200 (server uses both)
+            if ((resp.retcode == 0 || resp.retcode == 200) && resp.data.isNotEmpty()) {
                 val count = try {
                     val json = org.json.JSONObject(resp.data)
                     json.optInt("count", 0)
                 } catch (_: Exception) {
+                    // Try parsing as plain number
                     resp.data.trim().toIntOrNull() ?: 0
                 }
                 _state.update { it.copy(onlinePlayerCount = count) }
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.w("MainViewModel", "fetchOnlineCount failed: ${e.message}")
+        }
     }
 
     fun syncResources() {
