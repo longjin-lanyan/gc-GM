@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原神 GM 工具 - 下载客户端</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 48px 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .icon {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        .features {
+            text-align: left;
+            margin-bottom: 32px;
+        }
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .feature-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+        }
+        .download-btn:active { transform: translateY(0); }
+        .version-info {
+            margin-top: 16px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .admin-link {
+            display: block;
+            margin-top: 24px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .admin-link:hover { color: rgba(255, 255, 255, 0.7); }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">&#9889;</div>
+        <h1>原神 GM 工具</h1>
+        <p class="subtitle">Genshin Impact GM Command Tool</p>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">&#128230;</div>
+                <div class="feature-text">物品/武器/角色一键给予</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">&#128272;</div>
+                <div class="feature-text">UID 验证码安全绑定</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">&#128640;</div>
+                <div class="feature-text">自定义指令执行与分享</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">&#128241;</div>
+                <div class="feature-text">原生安卓体验，Protobuf 高效通信</div>
+            </div>
+        </div>
+
+        <a href="/api/resource/download/app-release.apk" class="download-btn" id="downloadBtn">
+            &#11015; 下载安卓客户端
+        </a>
+        <div class="version-info" id="versionInfo">Android 8.0+ (API 26)</div>
+
+        <a href="/admin.html" class="admin-link">管理后台入口</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,278 @@
+syntax = "proto3";
+
+package genshin.gm;
+
+option java_package = "com.genshin.gm.proto";
+option java_multiple_files = true;
+option java_outer_classname = "GenshinGMProto";
+
+// ==================== Common ====================
+
+message ApiResponse {
+  bool success = 1;
+  string message = 2;
+  bytes data = 3; // Serialized sub-message
+}
+
+// ==================== Auth ====================
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  bool success = 1;
+  string message = 2;
+  string session_token = 3;
+  string username = 4;
+}
+
+message LogoutRequest {
+  string session_token = 1;
+}
+
+message UserInfoRequest {
+  string session_token = 1;
+}
+
+message UserInfoResponse {
+  bool success = 1;
+  string message = 2;
+  string username = 3;
+  repeated string verified_uids = 4;
+}
+
+message AddUidRequest {
+  string session_token = 1;
+  string uid = 2;
+}
+
+message RemoveUidRequest {
+  string session_token = 1;
+  string uid = 2;
+}
+
+message CheckUidRequest {
+  string session_token = 1;
+  string uid = 2;
+}
+
+message CheckUidResponse {
+  bool success = 1;
+  bool verified = 2;
+  string message = 3;
+}
+
+// ==================== Game Data ====================
+
+message GameDataItem {
+  int32 id = 1;
+  string name = 2;
+}
+
+message GameDataListResponse {
+  repeated GameDataItem items = 1;
+}
+
+message GiveCommandRequest {
+  int32 item_id = 1;
+  int32 quantity = 2;
+}
+
+message QuestCommandRequest {
+  int32 quest_id = 1;
+}
+
+message CommandResponse {
+  bool success = 1;
+  string command = 2;
+}
+
+// ==================== Grasscutter ====================
+
+message GrasscutterConfigResponse {
+  string server_url = 1;
+  string api_path = 2;
+  string full_url = 3;
+  bool has_console_token = 4;
+}
+
+message ServerRequest {
+  string server_url = 1;
+}
+
+message SendCodeRequest {
+  string server_url = 1;
+  int32 uid = 2;
+}
+
+message VerifyCodeRequest {
+  string server_url = 1;
+  string token = 2;
+  int32 code = 3;
+}
+
+message GcCommandRequest {
+  string server_url = 1;
+  string token = 2;
+  string command = 3;
+}
+
+message ConsoleCommandRequest {
+  string server_url = 1;
+  string admin_token = 2;
+  string command = 3;
+}
+
+message RunModeRequest {
+  string server_url = 1;
+  string token = 2;
+}
+
+message OpenCommandResult {
+  int32 retcode = 1;
+  string message = 2;
+  string data = 3;
+}
+
+// ==================== Player Commands ====================
+
+message PlayerCommandProto {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+  string command = 4;
+  string category = 5;
+  string uploader_name = 6;
+  string upload_time = 7;
+  string review_status = 8;
+  string review_note = 9;
+  string review_time = 10;
+  int32 likes = 11;
+  int32 views = 12;
+  repeated string liked_uids = 13;
+}
+
+message SubmitCommandRequest {
+  string title = 1;
+  string description = 2;
+  string command = 3;
+  string category = 4;
+  string uploader_name = 5;
+}
+
+message SubmitCommandResponse {
+  bool success = 1;
+  string message = 2;
+  PlayerCommandProto data = 3;
+}
+
+message GetApprovedRequest {
+  string category = 1;
+  string exclude = 2;
+  string sort = 3;
+}
+
+message PlayerCommandListResponse {
+  repeated PlayerCommandProto commands = 1;
+}
+
+message ViewRequest {
+  int64 id = 1;
+}
+
+message LikeRequest {
+  int64 id = 1;
+  string uid = 2;
+}
+
+message ExecutePresetRequest {
+  int64 id = 1;
+  string uid = 2;
+  string session_token = 3;
+}
+
+message ExecuteCustomRequest {
+  string uid = 1;
+  string command = 2;
+  string session_token = 3;
+}
+
+message ExecuteResponse {
+  bool success = 1;
+  string message = 2;
+  string data = 3;
+  bool dangerous = 4;
+  bool need_login = 5;
+  string debug = 6;
+}
+
+// ==================== Admin ====================
+
+message AdminRequest {
+  string admin_token = 1;
+}
+
+message AdminReviewRequest {
+  int64 id = 1;
+  string admin_token = 2;
+  string review_note = 3;
+  string category = 4;
+}
+
+// ==================== Verification ====================
+
+message VerifySendRequest {
+  string uid = 1;
+}
+
+message VerifyCheckRequest {
+  string uid = 1;
+  string code = 2;
+}
+
+message VerifyStatusRequest {
+  string uid = 1;
+}
+
+message VerifyResponse {
+  bool success = 1;
+  string message = 2;
+  string token = 3;
+  bool verified = 4;
+}
+
+// ==================== Resource ====================
+
+message ResourceCheckRequest {
+  repeated ResourceFileInfo files = 1;
+}
+
+message ResourceFileInfo {
+  string file_name = 1;
+  string md5 = 2;
+}
+
+message ResourceCheckResponse {
+  repeated ResourceUpdateInfo updates = 1;
+}
+
+message ResourceUpdateInfo {
+  string file_name = 1;
+  string server_md5 = 2;
+  string download_url = 3;
+}
+
+// ==================== Envelope ====================
+
+// Unified request/response envelope for protobuf transport
+message ProtoEnvelope {
+  string action = 1; // e.g. "auth.login", "gm.items", "commands.execute"
+  bytes payload = 2; // Serialized request/response message
+}

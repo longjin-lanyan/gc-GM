@@ -1,16 +1,24 @@
 package com.genshin.gm.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
 
 /**
- * Web配置类 - 配置静态资源映射和CORS
+ * Web配置类 - 配置静态资源映射、CORS和UA拦截
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private UserAgentInterceptor userAgentInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(userAgentInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns("/api/**", "/data/**", "/admin.html", "/download.html");
+    }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -31,12 +39,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // 配置CORS，允许所有来源访问API
+        // 配置CORS，允许所有来源访问API（包括proto端点）
         registry.addMapping("/api/**")
-                .allowedOriginPatterns("*")  // 允许所有来源
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 允许的HTTP方法
-                .allowedHeaders("*")  // 允许所有请求头
-                .allowCredentials(true)  // 允许发送Cookie
-                .maxAge(3600);  // 预检请求缓存时间（秒）
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 }
