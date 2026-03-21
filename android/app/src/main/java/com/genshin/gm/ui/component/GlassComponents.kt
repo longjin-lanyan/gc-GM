@@ -28,9 +28,10 @@ val GlassWarning = Color(0xFFffc107)
 
 val GlassGradient = Brush.linearGradient(
     colors = listOf(
-        Color(0xFF667EEA),
-        Color(0xFF764BA2),
-        Color(0xFFE091C8),
+        Color(0xFFD6E4F0),
+        Color(0xFF8EC5FC),
+        Color(0xFF4A9BE8),
+        Color(0xFF2878D0),
     ),
     start = Offset(0f, 0f),
     end = Offset(1500f, 2500f)

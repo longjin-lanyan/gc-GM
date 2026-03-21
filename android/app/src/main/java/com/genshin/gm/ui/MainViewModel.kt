@@ -97,9 +97,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun loadBackground() {
         val bgDir = File(getApplication<Application>().filesDir, "data/bg")
-        val bgFile = bgDir.listFiles()?.firstOrNull {
-            it.isFile && (it.name.endsWith(".jpg") || it.name.endsWith(".png") || it.name.endsWith(".jpeg"))
-        }
+        val bgFiles = bgDir.listFiles()
+            ?.filter { it.isFile && (it.name.endsWith(".jpg") || it.name.endsWith(".png") || it.name.endsWith(".jpeg")) }
+            ?.sortedBy { it.name }
+            ?: return
+
+        // Prefer the second image (blue bg) if available, otherwise use the first
+        val bgFile = if (bgFiles.size >= 2) bgFiles[1] else bgFiles.firstOrNull()
         if (bgFile != null) {
             _state.update { it.copy(backgroundImagePath = bgFile.absolutePath) }
         }
