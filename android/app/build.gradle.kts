@@ -16,10 +16,22 @@ android {
         versionName = "1.0.0"
     }
 
+    signingConfigs {
+        create("release") {
+            // CI uses debug keystore for unsigned builds
+            // For production, configure your own keystore
+            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false  // Disable for now to avoid ProGuard issues in CI
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -73,7 +85,7 @@ dependencies {
     implementation("com.google.protobuf:protobuf-javalite:3.25.3")
 
     // OkHttp for network
-    implementation("okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
