@@ -27,7 +27,7 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
             .verticalScroll(rememberScrollState())
     ) {
         // Status card
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.78f) {
             if (!state.isLoggedIn) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Warning, null, tint = GlassError)
@@ -64,7 +64,7 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Command input card
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.82f) {
             Text(
                 "自定义指令",
                 style = MaterialTheme.typography.titleSmall,
@@ -113,7 +113,7 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
         if (state.executeResult.isNotEmpty()) {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                alpha = 0.85f
+                alpha = 0.88f
             ) {
                 Text(
                     "执行结果",
@@ -134,12 +134,11 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Quick commands
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.78f) {
             Text(
                 "快捷指令",
                 style = MaterialTheme.typography.titleSmall,
@@ -158,7 +157,7 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
 
             quickCommands.forEach { (cmd, label) ->
                 Surface(
-                    color = Color.White.copy(alpha = 0.4f),
+                    color = Color.White.copy(alpha = 0.5f),
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                     onClick = {

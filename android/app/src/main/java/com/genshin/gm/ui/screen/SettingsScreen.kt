@@ -28,7 +28,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
             .verticalScroll(rememberScrollState())
     ) {
         // Server URL
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f) {
             Text(
                 "服务器设置",
                 style = MaterialTheme.typography.titleSmall,
@@ -60,7 +60,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Resource sync
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f) {
             Text(
                 "资源管理",
                 style = MaterialTheme.typography.titleSmall,
@@ -75,13 +75,9 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             if (state.resourceSyncStatus.isNotEmpty()) {
-                Surface(
-                    color = Color(0xFFF0F0FF),
-                    shape = MaterialTheme.shapes.small
-                ) {
+                GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         state.resourceSyncStatus,
-                        modifier = Modifier.padding(8.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = GlassPrimary
                     )
@@ -98,7 +94,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Admin panel
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f) {
             Text(
                 "管理员",
                 style = MaterialTheme.typography.titleSmall,
@@ -120,7 +116,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // App info
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f) {
             Text(
                 "关于",
                 style = MaterialTheme.typography.titleSmall,
@@ -134,7 +130,7 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
                 color = GlassTextColor
             )
             Text(
-                "Android 8.0+ | Protobuf 通信 | 磨砂玻璃 UI",
+                "Android 8.0+ | Protobuf 通信",
                 style = MaterialTheme.typography.bodySmall,
                 color = GlassSecondaryText
             )

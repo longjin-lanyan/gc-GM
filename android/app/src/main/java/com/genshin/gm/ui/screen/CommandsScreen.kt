@@ -73,21 +73,18 @@ fun CommandsScreen(vm: MainViewModel, state: UiState) {
 
         // Execute result
         if (state.executeResult.isNotEmpty()) {
-            GlassCard(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                alpha = 0.85f
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                color = if (state.executeResult.startsWith("成功")) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
+                shape = MaterialTheme.shapes.medium,
+                shadowElevation = 2.dp
             ) {
-                Surface(
-                    color = if (state.executeResult.startsWith("成功")) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        state.executeResult,
-                        modifier = Modifier.padding(10.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (state.executeResult.startsWith("成功")) GlassSuccess else GlassError
-                    )
-                }
+                Text(
+                    state.executeResult,
+                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (state.executeResult.startsWith("成功")) GlassSuccess else GlassError
+                )
             }
         }
     }
@@ -103,6 +100,7 @@ fun CommandsScreen(vm: MainViewModel, state: UiState) {
     }
 }
 
+// Matches web .command-card styling
 @Composable
 private fun CommandCard(
     cmd: PlayerCommandProto,
@@ -112,7 +110,8 @@ private fun CommandCard(
 ) {
     GlassCard(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        alpha = 0.5f
+        alpha = 0.78f,
+        elevation = 3.dp
     ) {
         Text(
             cmd.title,
@@ -127,16 +126,18 @@ private fun CommandCard(
                 color = GlassSecondaryText
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
+        // Command content - matches web .command-card-content
         Surface(
-            color = Color(0xFFF5F5F5),
+            color = Color.White.copy(alpha = 0.5f),
             shape = MaterialTheme.shapes.small
         ) {
             Text(
                 cmd.command,
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(10.dp),
                 style = MaterialTheme.typography.bodyMedium,
-                color = GlassPrimary
+                color = GlassPrimary,
+                fontWeight = FontWeight.Medium
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -186,37 +187,38 @@ private fun SubmitCommandDialog(
         title = { Text("提交指令", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                // Upload instructions card (matching the web UI style)
-                Surface(
-                    color = Color(0xFFF8F9FA),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            "指令上传说明",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = GlassPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "UID占位符：",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = GlassTextColor
-                        )
-                        Text(
-                            "  - 可以使用 @ 或 @UID 作为UID占位符\n  - 或者直接不写UID，系统会自动添加（推荐）",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = GlassSecondaryText
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "示例: give 201 99",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = GlassSecondaryText
-                        )
-                    }
+                // Upload instructions - matches web #e3f2fd + border-left 4px #667eea
+                GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "指令上传说明",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = GlassPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "UID占位符：",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = GlassTextColor
+                    )
+                    Text(
+                        "  - 可以使用 @ 或 @UID 作为UID占位符\n  - 或者直接不写UID，系统会自动添加（推荐）",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = GlassSecondaryText
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "示例: give 201 99",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = GlassSecondaryText
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "注意：不要包含分号(;)、双与号(&&)等特殊字符",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = GlassError
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

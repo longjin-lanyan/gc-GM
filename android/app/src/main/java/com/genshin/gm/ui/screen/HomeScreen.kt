@@ -24,7 +24,6 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("物品", "武器", "角色", "任务")
 
-    // Only try to load if data is empty AND we're initialized (init already tried once)
     LaunchedEffect(state.isInitialized) {
         if (state.items.isEmpty() && state.isInitialized && !state.isLoading) {
             vm.loadGameData()
@@ -36,7 +35,8 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
         if (state.resourceSyncStatus.isNotEmpty()) {
             GlassCard(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                alpha = 0.35f
+                alpha = 0.70f,
+                elevation = 2.dp
             ) {
                 Text(
                     state.resourceSyncStatus,
@@ -57,7 +57,7 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
 
         if (state.isLoading && state.items.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                GlassCard(alpha = 0.5f) {
+                GlassCard(alpha = 0.80f) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
@@ -74,9 +74,8 @@ fun HomeScreen(vm: MainViewModel, state: UiState) {
                 }
             }
         } else if (state.items.isEmpty() && !state.isLoading) {
-            // No data - show retry
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                GlassCard(alpha = 0.5f) {
+                GlassCard(alpha = 0.80f) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.CloudOff, null, tint = GlassSecondaryText, modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(8.dp))
@@ -134,18 +133,16 @@ private fun GameDataList(
 
     Column {
         // Search field
-        GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.4f) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("搜索物品/角色/武器") },
-                leadingIcon = { Icon(Icons.Default.Search, "搜索") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = glassTextFieldColors(),
-                shape = MaterialTheme.shapes.medium
-            )
-        }
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("搜索物品/角色/武器") },
+            leadingIcon = { Icon(Icons.Default.Search, "搜索") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = glassTextFieldColors(),
+            shape = MaterialTheme.shapes.medium
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -153,17 +150,18 @@ private fun GameDataList(
         if (generatedCommand.isNotEmpty()) {
             GlassCard(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                alpha = 0.85f
+                alpha = 0.88f,
+                elevation = 6.dp
             ) {
                 Text("生成的指令:", style = MaterialTheme.typography.labelMedium, color = GlassSecondaryText)
                 Spacer(modifier = Modifier.height(4.dp))
                 Surface(
-                    color = Color(0xFFF5F5F5),
+                    color = Color.White.copy(alpha = 0.5f),
                     shape = MaterialTheme.shapes.small
                 ) {
                     Text(
                         generatedCommand,
-                        modifier = Modifier.padding(10.dp),
+                        modifier = Modifier.padding(12.dp),
                         style = MaterialTheme.typography.bodyLarge,
                         color = GlassPrimary,
                         fontWeight = FontWeight.Medium
@@ -196,7 +194,6 @@ private fun GameDataList(
                         color = GlassWarning
                     )
                 }
-                // Execute result
                 if (executeResult.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(
@@ -223,7 +220,8 @@ private fun GameDataList(
             items(filtered, key = { it.id }) { item ->
                 GlassCard(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                    alpha = 0.4f
+                    alpha = 0.72f,
+                    elevation = 2.dp
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

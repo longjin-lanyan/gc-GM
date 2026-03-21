@@ -2,6 +2,7 @@ package com.genshin.gm.ui.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,10 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 // ==================== Glass Colors ====================
@@ -26,6 +29,7 @@ val GlassSuccess = Color(0xFF28a745)
 val GlassError = Color(0xFFdc3545)
 val GlassWarning = Color(0xFFffc107)
 
+// Blue gradient fallback (when no bg image is synced)
 val GlassGradient = Brush.linearGradient(
     colors = listOf(
         Color(0xFFD6E4F0),
@@ -42,16 +46,26 @@ val GlassButtonGradient = Brush.horizontalGradient(
 )
 
 // ==================== Glass Card ====================
+// Matches web CSS: rgba(255,255,255, alpha) + border + box-shadow
+// Without backdrop-filter blur, we use higher alpha (web fallback: 0.85)
 
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    alpha: Float = 0.45f,
+    alpha: Float = 0.78f,
+    elevation: Dp = 4.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val shape = RoundedCornerShape(12.dp)
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .shadow(
+                elevation = elevation,
+                shape = shape,
+                ambientColor = Color.Black.copy(alpha = 0.08f),
+                spotColor = Color.Black.copy(alpha = 0.12f)
+            ),
+        shape = shape,
         color = Color.White.copy(alpha = alpha),
         contentColor = GlassTextColor,
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
@@ -61,13 +75,16 @@ fun GlassCard(
 }
 
 // ==================== Glass Text Field Colors ====================
+// Matches web: border rgba(102,126,234,0.25), bg rgba(255,255,255,0.5)
 
 @Composable
 fun glassTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = GlassTextColor,
     unfocusedTextColor = GlassTextColor,
+    focusedContainerColor = Color.White.copy(alpha = 0.5f),
+    unfocusedContainerColor = Color.White.copy(alpha = 0.3f),
     focusedBorderColor = GlassPrimary,
-    unfocusedBorderColor = Color(0xFFCCCCCC),
+    unfocusedBorderColor = GlassPrimary.copy(alpha = 0.25f),
     focusedLabelColor = GlassPrimary,
     unfocusedLabelColor = GlassSecondaryText,
     cursorColor = GlassPrimary,
@@ -78,6 +95,7 @@ fun glassTextFieldColors() = OutlinedTextFieldDefaults.colors(
 )
 
 // ==================== Glass Tab Row ====================
+// Matches web .menu: rgba(255,255,255,0.25) + blur, .menu-btn.active: gradient
 
 @Composable
 fun GlassTabRow(
@@ -89,9 +107,11 @@ fun GlassTabRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.25f))
-            .padding(4.dp)
+            .background(Color.White.copy(alpha = 0.55f))
+            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(6.dp)
     ) {
         tabs.forEachIndexed { index, title ->
             val isSelected = selectedIndex == index
@@ -100,8 +120,14 @@ fun GlassTabRow(
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
                     .background(
-                        if (isSelected) Color.White.copy(alpha = 0.7f)
-                        else Color.Transparent
+                        if (isSelected) Brush.linearGradient(
+                            colors = listOf(GlassPrimary, GlassPrimaryDark),
+                            start = Offset(0f, 0f),
+                            end = Offset(300f, 300f)
+                        )
+                        else Brush.linearGradient(
+                            colors = listOf(Color.Transparent, Color.Transparent)
+                        )
                     )
                     .clickable { onTabSelected(index) }
                     .padding(vertical = 10.dp),
@@ -109,8 +135,8 @@ fun GlassTabRow(
             ) {
                 Text(
                     title,
-                    color = if (isSelected) GlassPrimary else GlassSecondaryText,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) Color.White else GlassPrimary,
+                    fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -119,6 +145,7 @@ fun GlassTabRow(
 }
 
 // ==================== Glass Gradient Button ====================
+// Matches web: gradient(135deg, #667eea, #764ba2), shadow
 
 @Composable
 fun GlassGradientButton(
@@ -137,12 +164,17 @@ fun GlassGradientButton(
             disabledContainerColor = Color(0xFFB0B0C0),
             disabledContentColor = Color.White.copy(alpha = 0.7f)
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 1.dp
+        ),
         content = content
     )
 }
 
 // ==================== Glass Chip ====================
+// Matches web .sub-btn: rgba(255,255,255,0.4) + border rgba(102,126,234,0.4)
 
 @Composable
 fun GlassChip(
@@ -151,22 +183,63 @@ fun GlassChip(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val shape = RoundedCornerShape(8.dp)
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .shadow(if (selected) 2.dp else 0.dp, shape)
+            .clip(shape)
             .background(
-                if (selected) GlassPrimary.copy(alpha = 0.15f)
-                else Color.White.copy(alpha = 0.35f)
+                if (selected) Brush.linearGradient(
+                    colors = listOf(GlassPrimary, GlassPrimaryDark)
+                )
+                else Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.55f),
+                        Color.White.copy(alpha = 0.55f)
+                    )
+                )
+            )
+            .border(
+                1.dp,
+                if (selected) Color.Transparent else GlassPrimary.copy(alpha = 0.4f),
+                shape
             )
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             label,
-            color = if (selected) GlassPrimary else GlassTextColor,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) Color.White else GlassPrimary,
+            fontWeight = FontWeight.SemiBold,
             style = MaterialTheme.typography.bodySmall
         )
+    }
+}
+
+// ==================== Info Card ====================
+// Matches web 指令上传说明: #e3f2fd + border-left 4px #667eea
+
+@Composable
+fun GlassInfoCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFFE3F2FD),
+        contentColor = GlassTextColor,
+    ) {
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            // Left accent border (matches web: border-left 4px solid #667eea)
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(GlassPrimary)
+            )
+            Column(modifier = Modifier.padding(15.dp), content = content)
+        }
     }
 }

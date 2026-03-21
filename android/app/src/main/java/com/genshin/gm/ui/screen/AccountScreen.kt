@@ -43,7 +43,7 @@ private fun LoginSection(vm: MainViewModel, state: UiState) {
     var password by remember { mutableStateOf("") }
     var isRegister by remember { mutableStateOf(false) }
 
-    GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+    GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.82f) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 Icons.Default.Person,
@@ -113,7 +113,7 @@ private fun LoginSection(vm: MainViewModel, state: UiState) {
 
 @Composable
 private fun UserInfoSection(vm: MainViewModel, state: UiState) {
-    GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+    GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Person, null, tint = GlassPrimary)
             Spacer(modifier = Modifier.width(8.dp))
@@ -136,7 +136,7 @@ private fun UserInfoSection(vm: MainViewModel, state: UiState) {
 
 @Composable
 private fun UidManagementSection(vm: MainViewModel, state: UiState) {
-    GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+    GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f) {
         Text(
             "已绑定的UID",
             style = MaterialTheme.typography.titleSmall,
@@ -153,10 +153,14 @@ private fun UidManagementSection(vm: MainViewModel, state: UiState) {
             )
         } else {
             state.verifiedUids.forEach { uid ->
+                // Matches web .uid-item styling
                 Surface(
                     color = if (state.activeUid == uid) GlassPrimary.copy(alpha = 0.1f)
-                    else Color.White.copy(alpha = 0.3f),
+                    else Color.White.copy(alpha = 0.45f),
                     shape = MaterialTheme.shapes.medium,
+                    border = if (state.activeUid == uid)
+                        BorderStroke(1.dp, GlassPrimary.copy(alpha = 0.3f))
+                    else null,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                 ) {
                     Row(
@@ -203,7 +207,7 @@ private fun VerificationSection(vm: MainViewModel, state: UiState) {
     var code by remember { mutableStateOf("") }
     var codeSent by remember { mutableStateOf(false) }
 
-    GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.5f) {
+    GlassCard(modifier = Modifier.fillMaxWidth(), alpha = 0.80f) {
         Text(
             "验证并绑定新UID",
             style = MaterialTheme.typography.titleSmall,
