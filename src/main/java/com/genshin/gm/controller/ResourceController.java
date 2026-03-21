@@ -43,10 +43,14 @@ public class ResourceController {
 
     /**
      * 获取 version.txt（所有资源文件的MD5清单）
+     * 每次请求时检查 data/txt/ 和 data/bg/ 是否有文件变动，有则自动刷新
      * 格式: 每行 "路径:md5"，如 "txt/Item.txt:abc123" 或 "bg/bg1.jpg:def456"
      */
     @GetMapping("/version")
     public ResponseEntity<String> getVersion() {
+        // 检查data目录的最后修改时间，如果有变动则重新生成version.txt
+        refreshIfDataChanged();
+
         File versionFile = new File(VERSION_FILE);
         if (!versionFile.exists()) {
             refreshVersionFile();
@@ -60,6 +64,34 @@ public class ResourceController {
             logger.error("读取version.txt失败", e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    private long lastDataModTime = 0;
+
+    /**
+     * 检查data目录是否有文件变动，有则刷新version.txt
+     */
+    private void refreshIfDataChanged() {
+        long currentMod = getLatestModTime(new File(TXT_DIR))
+                + getLatestModTime(new File(BG_DIR));
+        if (currentMod != lastDataModTime) {
+            lastDataModTime = currentMod;
+            refreshVersionFile();
+        }
+    }
+
+    private long getLatestModTime(File dir) {
+        if (!dir.exists() || !dir.isDirectory()) return 0;
+        long latest = dir.lastModified();
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isFile()) {
+                    latest = Math.max(latest, f.lastModified());
+                }
+            }
+        }
+        return latest;
     }
 
     /**

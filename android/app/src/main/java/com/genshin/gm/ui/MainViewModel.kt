@@ -49,6 +49,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { it.copy(serverUrl = url) }
             initClient(url)
 
+            // 每次启动自动热更资源
+            syncResources()
+
             if (token != null && username != null) {
                 _state.update {
                     it.copy(
@@ -213,18 +216,47 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                val items = protoClient!!.getItems()
-                val weapons = protoClient!!.getWeapons()
-                val avatars = protoClient!!.getAvatars()
-                val quests = protoClient!!.getQuests()
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        items = items.itemsList,
-                        weapons = weapons.itemsList,
-                        avatars = avatars.itemsList,
-                        quests = quests.itemsList,
-                    )
+                // 优先从本地热更缓存加载
+                val rm = resourceManager
+                val localItems = rm?.parseGameData("Item.txt")
+                val localWeapons = rm?.parseGameData("Weapon.txt")
+                val localAvatars = rm?.parseGameData("Avatar.txt")
+                val localQuests = rm?.parseGameData("Quest.txt")
+
+                if (!localItems.isNullOrEmpty()) {
+                    // 使用本地缓存数据
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            items = localItems.map { (id, name) ->
+                                GameDataItem.newBuilder().setId(id).setName(name).build()
+                            },
+                            weapons = (localWeapons ?: emptyList()).map { (id, name) ->
+                                GameDataItem.newBuilder().setId(id).setName(name).build()
+                            },
+                            avatars = (localAvatars ?: emptyList()).map { (id, name) ->
+                                GameDataItem.newBuilder().setId(id).setName(name).build()
+                            },
+                            quests = (localQuests ?: emptyList()).map { (id, name) ->
+                                GameDataItem.newBuilder().setId(id).setName(name).build()
+                            },
+                        )
+                    }
+                } else {
+                    // 本地无缓存，从服务端 proto 接口拉取
+                    val items = protoClient!!.getItems()
+                    val weapons = protoClient!!.getWeapons()
+                    val avatars = protoClient!!.getAvatars()
+                    val quests = protoClient!!.getQuests()
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            items = items.itemsList,
+                            weapons = weapons.itemsList,
+                            avatars = avatars.itemsList,
+                            quests = quests.itemsList,
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, message = "加载数据失败: ${e.message}") }
