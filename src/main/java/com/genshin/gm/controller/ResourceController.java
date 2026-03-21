@@ -1,7 +1,5 @@
 package com.genshin.gm.controller;
 
-import com.genshin.gm.proto.*;
-import com.google.protobuf.InvalidProtocolBufferException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -11,17 +9,18 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import javax.annotation.PostConstruct;
+import java.io.*;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
- * Resource Controller - handles data file MD5 checks and downloads
+ * 资源控制器
+ * - 服务端自行计算 data/txt/ 和 data/bg/ 下所有文件的MD5，存储到 data/version.txt
+ * - 客户端通过 GET /api/resource/version 获取 version.txt 内容
+ * - 客户端对比本地MD5，不同则从服务端下载对应资源
  */
 @RestController
 @RequestMapping("/api/resource")
@@ -30,106 +29,81 @@ public class ResourceController {
 
     private static final Logger logger = LoggerFactory.getLogger(ResourceController.class);
     private static final String DATA_DIR = "data";
-
-    // Cache of file MD5s, refreshed on demand
-    private final Map<String, String> md5Cache = new HashMap<>();
-    private long lastCacheTime = 0;
-    private static final long CACHE_TTL_MS = 60_000; // 1 minute
+    private static final String TXT_DIR = DATA_DIR + "/txt";
+    private static final String BG_DIR = DATA_DIR + "/bg";
+    private static final String VERSION_FILE = DATA_DIR + "/version.txt";
 
     /**
-     * Protobuf endpoint: check which resource files need updating
+     * 启动时计算并写入 version.txt
      */
-    @PostMapping(value = "/check", consumes = "application/x-protobuf", produces = "application/x-protobuf")
-    public ResponseEntity<byte[]> checkResources(@RequestBody byte[] body) {
+    @PostConstruct
+    public void init() {
+        refreshVersionFile();
+    }
+
+    /**
+     * 获取 version.txt（所有资源文件的MD5清单）
+     * 格式: 每行 "路径:md5"，如 "txt/Item.txt:abc123" 或 "bg/bg1.jpg:def456"
+     */
+    @GetMapping("/version")
+    public ResponseEntity<String> getVersion() {
+        File versionFile = new File(VERSION_FILE);
+        if (!versionFile.exists()) {
+            refreshVersionFile();
+        }
         try {
-            ResourceCheckRequest request = ResourceCheckRequest.parseFrom(body);
-            refreshMd5CacheIfNeeded();
-
-            ResourceCheckResponse.Builder responseBuilder = ResourceCheckResponse.newBuilder();
-
-            // Check each file the client has
-            for (ResourceFileInfo clientFile : request.getFilesList()) {
-                String serverMd5 = md5Cache.get(clientFile.getFileName());
-                if (serverMd5 != null && !serverMd5.equals(clientFile.getMd5())) {
-                    responseBuilder.addUpdates(ResourceUpdateInfo.newBuilder()
-                            .setFileName(clientFile.getFileName())
-                            .setServerMd5(serverMd5)
-                            .setDownloadUrl("/api/resource/download/" + clientFile.getFileName())
-                            .build());
-                }
-            }
-
-            // Also include files the client doesn't have
-            for (Map.Entry<String, String> entry : md5Cache.entrySet()) {
-                boolean clientHas = request.getFilesList().stream()
-                        .anyMatch(f -> f.getFileName().equals(entry.getKey()));
-                if (!clientHas) {
-                    responseBuilder.addUpdates(ResourceUpdateInfo.newBuilder()
-                            .setFileName(entry.getKey())
-                            .setServerMd5(entry.getValue())
-                            .setDownloadUrl("/api/resource/download/" + entry.getKey())
-                            .build());
-                }
-            }
-
+            String content = Files.readString(versionFile.toPath());
             return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType("application/x-protobuf"))
-                    .body(responseBuilder.build().toByteArray());
-
-        } catch (InvalidProtocolBufferException e) {
-            logger.error("Invalid protobuf in resource check", e);
-            return ResponseEntity.badRequest().build();
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(content);
+        } catch (IOException e) {
+            logger.error("读取version.txt失败", e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 
     /**
-     * JSON endpoint: get all resource file MD5s (for simpler clients)
+     * 手动触发刷新 version.txt（管理用）
      */
-    @GetMapping("/manifest")
-    public ResponseEntity<Map<String, String>> getManifest() {
-        refreshMd5CacheIfNeeded();
-        return ResponseEntity.ok(new HashMap<>(md5Cache));
+    @PostMapping("/refresh")
+    public ResponseEntity<Map<String, Object>> refresh() {
+        int count = refreshVersionFile();
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "version.txt已刷新",
+                "fileCount", count
+        ));
     }
 
     /**
-     * Download a specific data file
+     * 下载 data/txt/ 下的文件
      */
-    @GetMapping("/download/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) {
-        // Security: prevent path traversal
-        if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        File file = new File(DATA_DIR, fileName);
-        if (!file.exists() || !file.isFile()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Resource resource = new FileSystemResource(file);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+    @GetMapping("/download/txt/{fileName:.+}")
+    public ResponseEntity<Resource> downloadTxtFile(@PathVariable String fileName) {
+        return serveFile(TXT_DIR, fileName);
     }
 
     /**
-     * Download background images
+     * 下载 data/bg/ 下的文件
      */
     @GetMapping("/download/bg/{fileName:.+}")
     public ResponseEntity<Resource> downloadBgFile(@PathVariable String fileName) {
+        return serveFile(BG_DIR, fileName);
+    }
+
+    private ResponseEntity<Resource> serveFile(String dir, String fileName) {
+        // 防止路径遍历
         if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
             return ResponseEntity.badRequest().build();
         }
 
-        File file = new File(DATA_DIR + "/bg", fileName);
+        File file = new File(dir, fileName);
         if (!file.exists() || !file.isFile()) {
             return ResponseEntity.notFound().build();
         }
 
         Resource resource = new FileSystemResource(file);
-        String contentType = fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")
-                ? "image/jpeg" : fileName.endsWith(".png") ? "image/png" : "application/octet-stream";
+        String contentType = guessContentType(fileName);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
@@ -137,46 +111,51 @@ public class ResourceController {
                 .body(resource);
     }
 
-    private void refreshMd5CacheIfNeeded() {
-        long now = System.currentTimeMillis();
-        if (now - lastCacheTime < CACHE_TTL_MS && !md5Cache.isEmpty()) {
-            return;
+    /**
+     * 重新计算所有资源文件MD5并写入 data/version.txt
+     * 格式: 每行 "子目录/文件名:md5值"
+     * 例如: txt/Item.txt:a1b2c3d4e5f6...
+     *       bg/background.jpg:f6e5d4c3b2a1...
+     */
+    private int refreshVersionFile() {
+        List<String> lines = new ArrayList<>();
+
+        // 扫描 data/txt/
+        scanDirectory(new File(TXT_DIR), "txt", lines);
+
+        // 扫描 data/bg/
+        scanDirectory(new File(BG_DIR), "bg", lines);
+
+        // 按文件名排序保持稳定
+        lines.sort(String::compareTo);
+
+        // 写入 version.txt
+        try {
+            Files.writeString(Path.of(VERSION_FILE),
+                    String.join("\n", lines) + "\n",
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            logger.info("version.txt已更新: {} 个文件", lines.size());
+        } catch (IOException e) {
+            logger.error("写入version.txt失败", e);
         }
 
-        md5Cache.clear();
-        File dataDir = new File(DATA_DIR);
-        if (!dataDir.exists() || !dataDir.isDirectory()) {
-            logger.warn("Data directory not found: {}", DATA_DIR);
-            return;
-        }
+        return lines.size();
+    }
 
-        File[] files = dataDir.listFiles();
+    private void scanDirectory(File dir, String prefix, List<String> lines) {
+        if (!dir.exists() || !dir.isDirectory()) return;
+
+        File[] files = dir.listFiles();
         if (files == null) return;
 
         for (File file : files) {
-            if (file.isFile()) {
+            if (file.isFile() && !file.getName().startsWith(".")) {
                 String md5 = computeMd5(file);
                 if (md5 != null) {
-                    md5Cache.put(file.getName(), md5);
-                }
-            } else if (file.isDirectory() && "bg".equals(file.getName())) {
-                // Also index bg directory
-                File[] bgFiles = file.listFiles();
-                if (bgFiles != null) {
-                    for (File bgFile : bgFiles) {
-                        if (bgFile.isFile() && !bgFile.getName().startsWith(".")) {
-                            String md5 = computeMd5(bgFile);
-                            if (md5 != null) {
-                                md5Cache.put("bg/" + bgFile.getName(), md5);
-                            }
-                        }
-                    }
+                    lines.add(prefix + "/" + file.getName() + ":" + md5);
                 }
             }
         }
-
-        lastCacheTime = now;
-        logger.info("Resource MD5 cache refreshed: {} files", md5Cache.size());
     }
 
     private String computeMd5(File file) {
@@ -196,8 +175,17 @@ public class ResourceController {
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException | IOException e) {
-            logger.error("Failed to compute MD5 for: {}", file.getName(), e);
+            logger.error("计算MD5失败: {}", file.getName(), e);
             return null;
         }
+    }
+
+    private String guessContentType(String fileName) {
+        String lower = fileName.toLowerCase();
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".txt")) return "text/plain; charset=utf-8";
+        if (lower.endsWith(".json")) return "application/json";
+        return "application/octet-stream";
     }
 }

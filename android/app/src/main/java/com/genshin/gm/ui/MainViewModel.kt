@@ -65,7 +65,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun initClient(url: String) {
         protoClient = ProtoClient(url)
-        resourceManager = ResourceManager(getApplication(), protoClient!!)
+        resourceManager = ResourceManager(getApplication(), url)
     }
 
     fun updateServerUrl(url: String) {

@@ -19,7 +19,7 @@ import java.util.Map;
 @Component
 public class DataLoader {
     
-    private static final String DATA_DIR = "data/";
+    private static final String DATA_DIR = "data/txt/";
     
     /**
      * 从指定文件加载数据
