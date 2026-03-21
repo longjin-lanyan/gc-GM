@@ -33,7 +33,7 @@ val GlassGradient = Brush.linearGradient(
         Color(0xFFE091C8),
     ),
     start = Offset(0f, 0f),
-    end = Offset(Float.MAX_VALUE, Float.MAX_VALUE)
+    end = Offset(1500f, 2500f)
 )
 
 val GlassButtonGradient = Brush.horizontalGradient(

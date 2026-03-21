@@ -36,7 +36,7 @@ jobs:
 
       - name: Install Android SDK components
         run: |
-          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Copy proto file to Android project
         run: cp proto/genshin_gm.proto android/app/src/main/proto/genshin_gm.proto
@@ -62,22 +62,10 @@ jobs:
           gradle wrapper --gradle-version 8.7
           chmod +x gradlew
 
-      - name: Build Debug APK
-        run: |
-          cd android
-          ./gradlew assembleDebug --stacktrace --no-daemon
-
       - name: Build Release APK
         run: |
           cd android
           ./gradlew assembleRelease --stacktrace --no-daemon
-
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug
-          path: android/app/build/outputs/apk/debug/*.apk
-          retention-days: 30
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
