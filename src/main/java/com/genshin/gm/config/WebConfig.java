@@ -17,7 +17,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(userAgentInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/api/**", "/data/**", "/admin.html", "/download.html");
+                .excludePathPatterns("/api/**", "/data/**", "/login.html", "/download.html", "/admin.html");
     }
 
     @Override

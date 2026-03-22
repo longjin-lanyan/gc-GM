@@ -7,8 +7,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * UA Interceptor: browser access to root → download page, app access → normal API
- * Admin page (/admin.html) is always accessible from browser
+ * UA Interceptor:
+ * - Android app (UA starts with GenshinGM-Android) → pass through
+ * - PC browser accessing / or /index.html → redirect to /login.html
+ * - /api/**, /data/**, /login.html, /download.html, /admin.html → always pass through
  */
 @Component
 public class UserAgentInterceptor implements HandlerInterceptor {
@@ -21,10 +23,15 @@ public class UserAgentInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
         String userAgent = request.getHeader("User-Agent");
 
-        // API endpoints and admin page - always pass through
-        if (path.startsWith("/api/") || path.startsWith("/admin")
-                || path.startsWith("/data/") || path.startsWith("/download")) {
+        // Android app - always pass through
+        if (userAgent != null && userAgent.startsWith(APP_UA_PREFIX)) {
             return true;
+        }
+
+        // PC browser: root or index.html → redirect to login page
+        if ("/".equals(path) || "/index.html".equals(path)) {
+            response.sendRedirect("/login.html");
+            return false;
         }
 
         return true;
