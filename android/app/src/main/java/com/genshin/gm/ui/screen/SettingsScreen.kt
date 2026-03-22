@@ -20,7 +20,6 @@ import com.genshin.gm.ui.component.*
 
 @Composable
 fun SettingsScreen(vm: MainViewModel, state: UiState) {
-    var serverUrl by remember { mutableStateOf(state.serverUrl) }
     var showAdminDialog by remember { mutableStateOf(false) }
 
     Column(
@@ -29,34 +28,6 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Server settings card
-        GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-            Text("⚙️ 服务器设置", style = MaterialTheme.typography.titleSmall, color = GlassPrimary, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            GlassFormLabel("服务器地址：")
-            OutlinedTextField(
-                value = serverUrl,
-                onValueChange = { serverUrl = it },
-                placeholder = { Text("http://110.42.109.118:8088") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Dns, null) },
-                colors = glassTextFieldColors()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            GlassGradientButton(
-                onClick = { vm.updateServerUrl(serverUrl) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Save, null)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("保存")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Resource sync card
         GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
             Text("📦 资源管理", style = MaterialTheme.typography.titleSmall, color = GlassPrimary, fontWeight = FontWeight.Bold)
