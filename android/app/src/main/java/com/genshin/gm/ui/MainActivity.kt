@@ -140,12 +140,7 @@ fun MainApp(vm: MainViewModel = viewModel()) {
                 confirmButton = {
                     TextButton(onClick = {
                         vm.dismissUpdateDialog()
-                        val downloadUrl = if (state.updateDownloadUrl.startsWith("http")) {
-                            state.updateDownloadUrl
-                        } else {
-                            "${state.serverUrl}${state.updateDownloadUrl}"
-                        }
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(state.updateDownloadUrl))
                         context.startActivity(intent)
                     }) {
                         Text("下载更新")

@@ -43,28 +43,14 @@ public class ResourceController {
     }
 
     /**
-     * 获取安卓客户端下载配置
-     * version优先从 data/txt/apk.txt 读取，否则从config.json读取
+     * 获取安卓客户端下载配置（从config.json读取）
      */
     @GetMapping("/app-config")
     public ResponseEntity<java.util.Map<String, String>> getAppConfig() {
         var config = ConfigLoader.getConfig().getApp();
-        String version = config.getVersion();
-        // 优先从apk.txt读取版本号
-        File apkVersionFile = new File(TXT_DIR, "apk.txt");
-        if (apkVersionFile.exists()) {
-            try {
-                String fileVersion = Files.readString(apkVersionFile.toPath()).trim();
-                if (!fileVersion.isEmpty()) {
-                    version = fileVersion;
-                }
-            } catch (IOException e) {
-                logger.warn("读取apk.txt失败，使用config.json中的版本号", e);
-            }
-        }
         return ResponseEntity.ok(java.util.Map.of(
             "downloadUrl", config.getDownloadUrl(),
-            "version", version,
+            "version", config.getVersion(),
             "minAndroid", config.getMinAndroid()
         ));
     }
