@@ -46,21 +46,21 @@ val GlassButtonGradient = Brush.horizontalGradient(
 )
 
 // ==================== Glass Card ====================
-// Frosted glass style matching web CSS:
-//   background: rgba(255, 255, 255, 0.35)
-//   backdrop-filter: blur(12px) (simulated with alpha)
-//   border: 1px solid rgba(255, 255, 255, 0.5)
-//   border-radius: 16px
+// Outer container matching web .upload-form:
+//   background: rgba(255, 255, 255, 0.45)
+//   backdrop-filter: blur(16px) saturate(180%)
+//   border: 1px solid rgba(255, 255, 255, 0.3)
+//   border-radius: 12px
 
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    alpha: Float = 0.35f,
+    alpha: Float = 0.45f,
     elevation: Dp = 2.dp,
     contentPadding: Dp = 14.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(12.dp)
     Surface(
         modifier = modifier
             .shadow(
@@ -72,7 +72,7 @@ fun GlassCard(
         shape = shape,
         color = Color.White.copy(alpha = alpha),
         contentColor = GlassTextColor,
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(contentPadding), content = content)
     }
@@ -99,7 +99,7 @@ fun glassTextFieldColors() = OutlinedTextFieldDefaults.colors(
 )
 
 // ==================== Glass Tab Row ====================
-// Matches web .menu: rgba(255,255,255,0.25) + blur, rounded 16dp
+// Matches web .menu: rgba(255,255,255,0.25) + blur, rounded 12dp
 
 @Composable
 fun GlassTabRow(
@@ -111,10 +111,10 @@ fun GlassTabRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White.copy(alpha = 0.35f))
-            .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .shadow(2.dp, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.45f))
+            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
             .padding(6.dp)
     ) {
         tabs.forEachIndexed { index, title ->
@@ -122,7 +122,7 @@ fun GlassTabRow(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(
                         if (isSelected) Brush.linearGradient(
                             colors = listOf(GlassPrimary, GlassPrimaryDark),
@@ -168,7 +168,7 @@ fun GlassGradientButton(
             disabledContainerColor = Color(0xFFB0B0C0),
             disabledContentColor = Color.White.copy(alpha = 0.7f)
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(10.dp),
         elevation = ButtonDefaults.buttonElevation(
             defaultElevation = 2.dp,
             pressedElevation = 1.dp
@@ -187,7 +187,7 @@ fun GlassChip(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(8.dp)
     Box(
         modifier = modifier
             .shadow(if (selected) 2.dp else 0.dp, shape)
@@ -198,14 +198,14 @@ fun GlassChip(
                 )
                 else Brush.linearGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.35f)
+                        Color.White.copy(alpha = 0.45f),
+                        Color.White.copy(alpha = 0.45f)
                     )
                 )
             )
             .border(
                 1.dp,
-                if (selected) Color.Transparent else Color.White.copy(alpha = 0.5f),
+                if (selected) Color.Transparent else GlassPrimary.copy(alpha = 0.4f),
                 shape
             )
             .clickable { onClick() }
@@ -235,27 +235,20 @@ fun GlassFormLabel(text: String) {
 }
 
 // ==================== Info Card ====================
-// Frosted glass with left accent border (blue stripe)
-// background: rgba(255,255,255,0.35), border-left 4px #667eea, rounded 16dp
+// Matches web 指令上传说明: background #e3f2fd + border-left 4px #667eea
+// This is the inner card used inside a GlassCard for instructions/info
 
 @Composable
 fun GlassInfoCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(8.dp)
     Surface(
-        modifier = modifier
-            .shadow(
-                elevation = 2.dp,
-                shape = shape,
-                ambientColor = Color.Black.copy(alpha = 0.04f),
-                spotColor = Color.Black.copy(alpha = 0.06f)
-            ),
+        modifier = modifier,
         shape = shape,
-        color = Color.White.copy(alpha = 0.35f),
+        color = Color(0xFFE3F2FD),
         contentColor = GlassTextColor,
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
             // Left accent border (matches web: border-left 4px solid #667eea)

@@ -31,38 +31,8 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
     ) {
         // Server settings card
         GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "⚙️ 服务器设置",
-                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                    color = GlassPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text("连接说明：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 输入GM服务器的地址和端口", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 格式: http://IP地址:端口号", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 修改后需要点击保存才会生效", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    "⚠️ 确保服务器地址正确，否则无法连接",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassError,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
+            Text("⚙️ 服务器设置", style = MaterialTheme.typography.titleSmall, color = GlassPrimary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(16.dp))
 
             GlassFormLabel("服务器地址：")
             OutlinedTextField(
@@ -89,29 +59,8 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
 
         // Resource sync card
         GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "📦 资源管理",
-                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                    color = GlassPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text("同步说明：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 检查并同步服务端最新的游戏数据文件", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 包括物品、角色、武器等数据和背景图片", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 首次使用或数据异常时建议同步一次", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Text("📦 资源管理", style = MaterialTheme.typography.titleSmall, color = GlassPrimary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (state.resourceSyncStatus.isNotEmpty()) {
                 Surface(
@@ -143,26 +92,8 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
 
         // Admin panel card
         GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "🔐 管理员",
-                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                    color = GlassPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text("管理功能：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 审核玩家提交的指令", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 需要管理员Token验证身份", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Text("🔐 管理员", style = MaterialTheme.typography.titleSmall, color = GlassPrimary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(12.dp))
 
             GlassGradientButton(
                 onClick = { showAdminDialog = true },
@@ -178,22 +109,10 @@ fun SettingsScreen(vm: MainViewModel, state: UiState) {
 
         // About card
         GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "ℹ️ 关于",
-                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                    color = GlassPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 原神GM工具 v1.0.0", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• Android 8.0+ | Protobuf 通信", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-            }
+            Text("ℹ️ 关于", style = MaterialTheme.typography.titleSmall, color = GlassPrimary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("• 原神GM工具 v1.0.0", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
+            Text("• Android 8.0+ | Protobuf 通信", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
         }
     }
 
@@ -213,7 +132,7 @@ private fun AdminPanel(vm: MainViewModel, state: UiState, onDismiss: () -> Unit)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White.copy(alpha = 0.85f),
+        containerColor = Color.White.copy(alpha = 0.92f),
         titleContentColor = GlassTextColor,
         textContentColor = GlassTextColor,
         title = { Text("管理面板", fontWeight = FontWeight.Bold) },
@@ -253,8 +172,8 @@ private fun AdminPanel(vm: MainViewModel, state: UiState, onDismiss: () -> Unit)
                     } else {
                         state.pendingCommands.forEach { cmd ->
                             Surface(
-                                color = Color.White.copy(alpha = 0.35f),
-                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF5F5F5),
+                                shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                             ) {
                                 Column(modifier = Modifier.padding(8.dp)) {

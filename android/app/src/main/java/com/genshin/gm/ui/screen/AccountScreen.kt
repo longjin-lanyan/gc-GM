@@ -47,41 +47,6 @@ private fun LoginSection(vm: MainViewModel, state: UiState) {
     var isRegister by remember { mutableStateOf(false) }
 
     GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-        // Instructions info card
-        GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                if (isRegister) "📝 注册说明" else "📝 登录说明",
-                style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                color = GlassPrimary,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text("账户功能：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 登录后可以绑定游戏UID", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 执行GM指令需要登录并绑定UID", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 支持绑定多个UID，自由切换", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                "⚠️ 请妥善保管账户信息，勿泄露给他人",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassError,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Form fields
         GlassFormLabel("用户名：")
         OutlinedTextField(
             value = username, onValueChange = { username = it },
@@ -165,30 +130,13 @@ private fun UserInfoSection(vm: MainViewModel, state: UiState) {
 @Composable
 private fun UidManagementSection(vm: MainViewModel, state: UiState) {
     GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-        // Instructions info card
-        GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                "📋 已绑定的UID",
-                style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                color = GlassPrimary,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text("UID管理：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 点击选择按钮切换活动UID", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 标记为「活动」的UID将用于执行指令", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 可删除不再需要的UID绑定", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "已绑定的UID",
+            style = MaterialTheme.typography.titleSmall,
+            color = GlassPrimary,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (state.verifiedUids.isEmpty()) {
             Text(
@@ -252,41 +200,14 @@ private fun VerificationSection(vm: MainViewModel, state: UiState) {
     var codeSent by remember { mutableStateOf(false) }
 
     GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-        // Instructions info card
-        GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                "🔗 验证并绑定新UID",
-                style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                color = GlassPrimary,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            "验证并绑定新UID",
+            style = MaterialTheme.typography.titleSmall,
+            color = GlassPrimary,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(12.dp))
 
-            Text("验证流程：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 输入你的游戏UID", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 点击发送验证码，系统会在游戏内发送验证码", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-            Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                Text("• 输入收到的验证码完成绑定", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                "⚠️ 确保游戏在线以接收验证码",
-                style = MaterialTheme.typography.bodySmall,
-                color = GlassError,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Form fields
         GlassFormLabel("UID：")
         OutlinedTextField(
             value = uid, onValueChange = { uid = it },

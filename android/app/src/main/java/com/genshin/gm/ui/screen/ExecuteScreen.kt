@@ -66,87 +66,56 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Main card wrapping instructions + form (matches upload form style)
+        // Quick commands + custom command form
         GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = 20.dp) {
-            // Instructions info card
-            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "📝 指令执行说明",
-                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                    color = GlassPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(10.dp))
+            Text("快捷指令", style = MaterialTheme.typography.titleSmall, color = GlassPrimary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(10.dp))
 
-                Text("使用方式：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 在下方输入框输入指令，点击执行", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
-                Row(modifier = Modifier.padding(start = 16.dp, top = 2.dp)) {
-                    Text("• 或点击快捷指令一键执行", style = MaterialTheme.typography.bodySmall, color = GlassSecondaryText)
-                }
+            val quickCommands = listOf(
+                "/give 201 x10000" to "摩拉 x10000",
+                "/give 202 x1000" to "原石 x1000",
+                "/give 203 x100" to "纠缠之缘 x100",
+                "/heal" to "治疗全队",
+                "/killall" to "清除周围怪物"
+            )
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text("快捷指令：", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = GlassTextColor)
-                Spacer(modifier = Modifier.height(6.dp))
-
-                val quickCommands = listOf(
-                    "/give 201 x10000" to "摩拉 x10000",
-                    "/give 202 x1000" to "原石 x1000",
-                    "/give 203 x100" to "纠缠之缘 x100",
-                    "/heal" to "治疗全队",
-                    "/killall" to "清除周围怪物"
-                )
-
-                quickCommands.forEach { (cmd, label) ->
-                    Surface(
-                        color = Color.White.copy(alpha = 0.35f),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                        onClick = {
-                            command = cmd
-                            if (state.isLoggedIn && state.activeUid.isNotEmpty()) {
-                                vm.executeCustomCommand(cmd)
-                            }
-                        }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(label, modifier = Modifier.weight(1f), color = GlassTextColor, style = MaterialTheme.typography.bodySmall)
-                            Surface(
-                                color = Color.White,
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Text(
-                                    cmd,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-                                    color = GlassPrimary,
-                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(Icons.Default.PlayArrow, null, tint = GlassPrimary, modifier = Modifier.size(18.dp))
+            quickCommands.forEach { (cmd, label) ->
+                Surface(
+                    color = Color.White.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    onClick = {
+                        command = cmd
+                        if (state.isLoggedIn && state.activeUid.isNotEmpty()) {
+                            vm.executeCustomCommand(cmd)
                         }
                     }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(label, modifier = Modifier.weight(1f), color = GlassTextColor, style = MaterialTheme.typography.bodySmall)
+                        Surface(
+                            color = Color.White,
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Text(
+                                cmd,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                color = GlassPrimary,
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.PlayArrow, null, tint = GlassPrimary, modifier = Modifier.size(18.dp))
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    "⚠️ 注意：需要登录并选择活动UID才能执行指令",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = GlassError,
-                    fontWeight = FontWeight.Bold
-                )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Form fields
+            // Custom command input
             GlassFormLabel("自定义指令：")
             OutlinedTextField(
                 value = command,
@@ -184,9 +153,7 @@ fun ExecuteScreen(vm: MainViewModel, state: UiState) {
         // Result display
         if (state.executeResult.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            GlassCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "执行结果",
                     style = MaterialTheme.typography.titleSmall,

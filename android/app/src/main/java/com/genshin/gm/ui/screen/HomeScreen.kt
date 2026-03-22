@@ -145,23 +145,11 @@ private fun GameDataList(
     var quantity by remember { mutableStateOf("1") }
 
     Column {
-        // Info card + search (unified style)
+        // Search card
         GlassCard(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             contentPadding = 16.dp
         ) {
-            GlassInfoCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "📋 ${tabName}列表",
-                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp),
-                    color = GlassPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Search field
             GlassFormLabel("搜索${tabName}：")
             OutlinedTextField(
                 value = searchQuery,
