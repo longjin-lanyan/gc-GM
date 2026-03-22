@@ -329,16 +329,6 @@
     </div>
 
     <script>
-        // Mobile device detection: redirect to download page
-        (function() {
-            var ua = navigator.userAgent || navigator.vendor || window.opera;
-            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-            if (isMobile) {
-                window.location.href = '/download.html';
-                return;
-            }
-        })();
-
         // Check if already logged in
         window.addEventListener('DOMContentLoaded', function() {
             const sessionToken = localStorage.getItem('sessionToken');
