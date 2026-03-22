@@ -1,5 +1,6 @@
 package com.genshin.gm.controller;
 
+import com.genshin.gm.config.ConfigLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
