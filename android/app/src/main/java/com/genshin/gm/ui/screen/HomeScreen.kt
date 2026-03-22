@@ -1,5 +1,6 @@
 package com.genshin.gm.ui.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -144,92 +145,80 @@ private fun GameDataList(
     var selectedItem by remember { mutableStateOf<GameDataItem?>(null) }
     var quantity by remember { mutableStateOf("1") }
 
-    Column {
-        // Search card
-        GlassCard(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            contentPadding = 16.dp
-        ) {
-            GlassFormLabel("搜索${tabName}：")
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("输入名称或ID搜索") },
-                leadingIcon = { Icon(Icons.Default.Search, "搜索", modifier = Modifier.size(18.dp)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = glassTextFieldColors(),
-                shape = MaterialTheme.shapes.medium
-            )
-        }
+    // Everything wrapped in one outer GlassCard (like web .upload-form)
+    GlassCard(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = 16.dp
+    ) {
+        // Search field
+        GlassFormLabel("搜索${tabName}：")
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("输入名称或ID搜索") },
+            leadingIcon = { Icon(Icons.Default.Search, "搜索", modifier = Modifier.size(18.dp)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = glassTextFieldColors(),
+            shape = MaterialTheme.shapes.medium
+        )
 
         // Generated command display
         if (generatedCommand.isNotEmpty()) {
-            GlassCard(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+            Surface(
+                color = Color.White.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("指令:", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Surface(
-                        color = Color.White.copy(alpha = 0.35f),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f)
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Text("指令:", style = MaterialTheme.typography.labelSmall, color = GlassSecondaryText)
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             generatedCommand,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                             color = GlassPrimary,
                             fontWeight = FontWeight.Medium
                         )
                     }
-                }
-                if (canExecute) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    GlassGradientButton(
-                        onClick = { onExecute(generatedCommand) },
-                        modifier = Modifier.fillMaxWidth().height(36.dp),
-                        enabled = !isLoading
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White
-                            )
-                        } else {
-                            Icon(Icons.Default.Send, null, modifier = Modifier.size(16.dp))
+                    if (canExecute) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        GlassGradientButton(
+                            onClick = { onExecute(generatedCommand) },
+                            modifier = Modifier.fillMaxWidth().height(36.dp),
+                            enabled = !isLoading
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
+                            } else {
+                                Icon(Icons.Default.Send, null, modifier = Modifier.size(16.dp))
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("执行", style = MaterialTheme.typography.bodySmall)
                         }
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("执行", style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        Text("请先登录并选择活动UID后执行", style = MaterialTheme.typography.labelSmall, color = GlassWarning)
                     }
-                } else {
-                    Text(
-                        "请先登录并选择活动UID后执行",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = GlassWarning
-                    )
-                }
-                if (executeResult.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        color = if (executeResult.startsWith("成功")) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
-                        shape = MaterialTheme.shapes.small
-                    ) {
+                    if (executeResult.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             executeResult,
-                            modifier = Modifier.padding(10.dp),
-                            color = if (executeResult.startsWith("成功")) GlassSuccess else GlassError
+                            color = if (executeResult.startsWith("成功")) GlassSuccess else GlassError,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
             }
         }
 
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Item list - inner items use lightweight Surface (not standalone GlassCard)
         val filtered = items.filter {
             searchQuery.isEmpty()
                     || it.name.contains(searchQuery, ignoreCase = true)
@@ -239,11 +228,14 @@ private fun GameDataList(
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(filtered.size) { index ->
                 val item = filtered[index]
-                GlassCard(
+                Surface(
+                    color = Color.White.copy(alpha = 0.45f),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
