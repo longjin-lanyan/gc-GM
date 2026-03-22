@@ -9,6 +9,7 @@ public class AppConfig {
     private FrontendConfig frontend;
     private GrasscutterConfig grasscutter;
     private MySQLConfig mysql;
+    private AppDownloadConfig app;
 
     public FrontendConfig getFrontend() {
         return frontend;
@@ -32,6 +33,14 @@ public class AppConfig {
 
     public void setMysql(MySQLConfig mysql) {
         this.mysql = mysql;
+    }
+
+    public AppDownloadConfig getApp() {
+        return app != null ? app : new AppDownloadConfig();
+    }
+
+    public void setApp(AppDownloadConfig app) {
+        this.app = app;
     }
 
     public static class FrontendConfig {
@@ -120,6 +129,19 @@ public class AppConfig {
         public String getFullUrl() {
             return serverUrl + apiPath;
         }
+    }
+
+    public static class AppDownloadConfig {
+        private String downloadUrl = "/api/resource/download/app-release.apk";
+        private String version = "1.0.0";
+        private String minAndroid = "Android 8.0+ (API 26)";
+
+        public String getDownloadUrl() { return downloadUrl; }
+        public void setDownloadUrl(String downloadUrl) { this.downloadUrl = downloadUrl; }
+        public String getVersion() { return version; }
+        public void setVersion(String version) { this.version = version; }
+        public String getMinAndroid() { return minAndroid; }
+        public void setMinAndroid(String minAndroid) { this.minAndroid = minAndroid; }
     }
 
     public static class MySQLConfig {

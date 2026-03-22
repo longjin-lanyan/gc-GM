@@ -2,6 +2,11 @@
   "frontend": {
     "port": 8080
   },
+  "app": {
+    "downloadUrl": "/api/resource/download/app-release.apk",
+    "version": "1.0.0",
+    "minAndroid": "Android 8.0+ (API 26)"
+  },
   "grasscutter": {
     "serverUrl": "http://127.0.0.1:1145",
     "apiPath": "/opencommand/api",

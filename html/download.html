@@ -144,12 +144,31 @@
             </div>
         </div>
 
-        <a href="/api/resource/download/app-release.apk" class="download-btn" id="downloadBtn">
+        <a href="#" class="download-btn" id="downloadBtn" onclick="return false;">
             &#11015; 下载安卓客户端
         </a>
-        <div class="version-info" id="versionInfo">Android 8.0+ (API 26)</div>
+        <div class="version-info" id="versionInfo">加载中...</div>
 
         <a href="/admin.html" class="admin-link">管理后台入口</a>
     </div>
+<script>
+    // 从服务端config.json读取下载地址
+    fetch('/api/resource/app-config')
+        .then(r => r.json())
+        .then(cfg => {
+            var btn = document.getElementById('downloadBtn');
+            btn.href = cfg.downloadUrl;
+            btn.onclick = null;
+            document.getElementById('versionInfo').textContent =
+                'v' + cfg.version + ' | ' + cfg.minAndroid;
+        })
+        .catch(function() {
+            // 降级：使用默认地址
+            var btn = document.getElementById('downloadBtn');
+            btn.href = '/api/resource/download/app-release.apk';
+            btn.onclick = null;
+            document.getElementById('versionInfo').textContent = 'Android 8.0+ (API 26)';
+        });
+</script>
 </body>
 </html>

@@ -42,6 +42,19 @@ public class ResourceController {
     }
 
     /**
+     * 获取安卓客户端下载配置（从config.json读取）
+     */
+    @GetMapping("/app-config")
+    public ResponseEntity<java.util.Map<String, String>> getAppConfig() {
+        var config = ConfigLoader.getConfig().getApp();
+        return ResponseEntity.ok(java.util.Map.of(
+            "downloadUrl", config.getDownloadUrl(),
+            "version", config.getVersion(),
+            "minAndroid", config.getMinAndroid()
+        ));
+    }
+
+    /**
      * 获取 version.txt（所有资源文件的MD5清单）
      * 每次请求时检查 data/txt/ 和 data/bg/ 是否有文件变动，有则自动刷新
      * 格式: 每行 "路径:md5"，如 "txt/Item.txt:abc123" 或 "bg/bg1.jpg:def456"
