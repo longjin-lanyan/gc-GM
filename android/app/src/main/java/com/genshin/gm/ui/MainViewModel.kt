@@ -34,7 +34,7 @@ data class UiState(
     val isInitialized: Boolean = false,
 ) {
     companion object {
-        const val DEFAULT_SERVER_URL = "http://110.42.109.118:8088"
+        const val DEFAULT_SERVER_URL = "http://110.42.109.118:8080"
     }
 }
 
