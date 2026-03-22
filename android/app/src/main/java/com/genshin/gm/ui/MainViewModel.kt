@@ -32,6 +32,9 @@ data class UiState(
     val backgroundImagePath: String? = null,
     val onlinePlayerCount: Int = 0,
     val isInitialized: Boolean = false,
+    val showUpdateDialog: Boolean = false,
+    val updateVersion: String = "",
+    val updateDownloadUrl: String = "",
 ) {
     companion object {
         const val DEFAULT_SERVER_URL = "http://110.42.109.118:8080"
@@ -83,6 +86,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     refreshUserInfo()
                 } catch (_: Exception) {}
             }
+
+            // Check for app updates
+            try { checkAppUpdate() } catch (_: Exception) {}
 
             // Fetch online player count independently
             try { fetchOnlineCount() } catch (_: Exception) {}
@@ -488,6 +494,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             syncResourcesInternal()
             loadBackground()
         }
+    }
+
+    // ==================== App Update ====================
+
+    private suspend fun checkAppUpdate() {
+        val config = protoClient.getAppConfig()
+        val serverVersion = config["version"] ?: return
+        val localVersion = getApplication<Application>().packageManager
+            .getPackageInfo(getApplication<Application>().packageName, 0).versionName ?: return
+        if (serverVersion != localVersion) {
+            val downloadUrl = config["downloadUrl"] ?: ""
+            _state.update {
+                it.copy(
+                    showUpdateDialog = true,
+                    updateVersion = serverVersion,
+                    updateDownloadUrl = downloadUrl
+                )
+            }
+        }
+    }
+
+    fun dismissUpdateDialog() {
+        _state.update { it.copy(showUpdateDialog = false) }
     }
 
     fun clearMessage() {

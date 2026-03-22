@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import android.content.Intent
+import android.net.Uri
 import com.genshin.gm.ui.component.GlassGradient
 import com.genshin.gm.ui.screen.*
 import com.genshin.gm.ui.theme.GenshinGMTheme
@@ -125,6 +127,35 @@ fun MainApp(vm: MainViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(GlassGradient)
+            )
+        }
+
+        // Update dialog
+        if (state.showUpdateDialog) {
+            val context = LocalContext.current
+            AlertDialog(
+                onDismissRequest = { vm.dismissUpdateDialog() },
+                title = { Text("发现新版本") },
+                text = { Text("服务端版本: ${state.updateVersion}\n当前版本与服务端不一致，是否下载最新版本？") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        vm.dismissUpdateDialog()
+                        val downloadUrl = if (state.updateDownloadUrl.startsWith("http")) {
+                            state.updateDownloadUrl
+                        } else {
+                            "${state.serverUrl}${state.updateDownloadUrl}"
+                        }
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+                        context.startActivity(intent)
+                    }) {
+                        Text("下载更新")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { vm.dismissUpdateDialog() }) {
+                        Text("稍后再说")
+                    }
+                }
             )
         }
 

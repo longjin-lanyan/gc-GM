@@ -238,6 +238,21 @@ class ProtoClient(private val baseUrl: String) {
         return VerifyResponse.parseFrom(sendProto("verify.status", req.toByteArray()))
     }
 
+    // ==================== App Config ====================
+
+    suspend fun getAppConfig(): Map<String, String> = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+            .url("$baseUrl/api/resource/app-config")
+            .header("User-Agent", "GenshinGM-Android/1.0")
+            .build()
+        val response = client.newCall(request).execute()
+        val body = response.body?.string() ?: "{}"
+        val json = org.json.JSONObject(body)
+        val map = mutableMapOf<String, String>()
+        json.keys().forEach { key -> map[key] = json.optString(key, "") }
+        map
+    }
+
     // ==================== Resources ====================
 
     suspend fun checkResources(localFiles: List<Pair<String, String>>): ResourceCheckResponse =
