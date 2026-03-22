@@ -27,15 +27,6 @@ public class UserAgentInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // Root or index.html - check if it's a browser
-        if ("/".equals(path) || "/index.html".equals(path)) {
-            if (userAgent != null && !userAgent.startsWith(APP_UA_PREFIX)) {
-                // Browser detected - redirect to download page
-                response.sendRedirect("/download.html");
-                return false;
-            }
-        }
-
         return true;
     }
 }
