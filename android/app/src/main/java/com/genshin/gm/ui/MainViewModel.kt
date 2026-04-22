@@ -37,7 +37,7 @@ data class UiState(
     val updateDownloadUrl: String = "",
 ) {
     companion object {
-        const val DEFAULT_SERVER_URL = "http://110.42.109.118:8080"
+        const val DEFAULT_SERVER_URL = "http://103.236.85.154:1145"
     }
 }
 
