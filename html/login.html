@@ -529,6 +529,17 @@
             }
         }
 
+        // 在页面底部添加玩家注册入口链接（如果尚未存在）
+        (function() {
+            if (!document.getElementById('player-reg-link')) {
+                var link = document.createElement('div');
+                link.id = 'player-reg-link';
+                link.style.cssText = 'text-align:center;margin-top:18px;font-size:13px;color:rgba(0,0,0,0.5);';
+                link.innerHTML = '玩家注册游戏账号请点 <a href="/html/register.html" style="color:#667eea;text-decoration:none;font-weight:600;">这里</a>';
+                document.querySelector('.container').appendChild(link);
+            }
+        })();
+
         // Allow Enter key to submit
         document.getElementById('login-password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {

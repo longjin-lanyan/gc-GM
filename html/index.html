@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: url('/data/bg/lanyan_GM') no-repeat center center fixed;
+            background: url('/data/bg/kun-gmligt.jpg') no-repeat center center fixed;
             background-size: cover;
             min-height: 100vh;
             display: flex;
@@ -1149,6 +1149,49 @@
                         <div id="verification-status" style="margin-top: 12px; padding: 12px; border-radius: 8px; display: none; font-size: 14px;"></div>
                     </div>
                 </div>
+
+                <!-- ══ 账号注销 ══ -->
+                <div class="settings-section" id="delete-account-section">
+                    <div class="settings-section-title" style="color: #e05c5c;">🗑️ 账号注销</div>
+
+                    <!-- 注销类型选择 -->
+                    <div style="margin: 12px 0 14px; display: flex; flex-direction: column; gap: 10px;">
+                        <label id="del-opt-both-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px 14px; background: rgba(224,92,92,0.07); border: 1px solid rgba(224,92,92,0.18); border-radius: 9px; transition: background 0.15s;">
+                            <input type="checkbox" id="del-backend" checked style="accent-color:#e05c5c; width:16px; height:16px; cursor:pointer;">
+                            <span style="font-size:14px; color:#e8dcc8;">删除<strong style="color:#f08080;">后台账号</strong>（登录账号 / GM面板账号）</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px 14px; background: rgba(224,92,92,0.07); border: 1px solid rgba(224,92,92,0.18); border-radius: 9px; transition: background 0.15s;">
+                            <input type="checkbox" id="del-game" checked style="accent-color:#e05c5c; width:16px; height:16px; cursor:pointer;">
+                            <span style="font-size:14px; color:#e8dcc8;">删除<strong style="color:#f08080;">游戏账号</strong>（原神私服登录账号）</span>
+                        </label>
+                    </div>
+
+                    <!-- 说明提示 -->
+                    <div id="del-hint" style="font-size: 12px; color: rgba(240,128,128,0.75); margin-bottom: 14px; line-height: 1.6; padding: 8px 12px; background: rgba(224,92,92,0.06); border-radius: 7px; border-left: 3px solid rgba(224,92,92,0.4);">
+                        ⚠️ 默认同时注销两个账号，IP 注册配额 -1。此操作<strong>不可撤销</strong>，请谨慎选择。
+                    </div>
+
+                    <!-- 二次确认 / 执行按钮 -->
+                    <div id="del-confirm-area" style="display:none; margin-bottom: 12px; padding: 12px; background: rgba(224,92,92,0.1); border: 1px solid rgba(224,92,92,0.4); border-radius: 9px;">
+                        <div style="font-size: 13px; color: #f08080; margin-bottom: 10px; font-weight: 600;">⚠️ 确认注销？此操作无法撤销！</div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="confirmDeleteAccount()" style="flex:1; padding: 9px; background: #c0392b; border: none; border-radius: 7px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='#a93226'" onmouseout="this.style.background='#c0392b'">
+                                确认注销
+                            </button>
+                            <button onclick="cancelDeleteAccount()" style="flex:1; padding: 9px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; color: #e8dcc8; font-size: 14px; cursor: pointer;">
+                                取消
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 结果提示 -->
+                    <div id="del-result" style="display:none; font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px;"></div>
+
+                    <button id="del-trigger-btn" onclick="triggerDeleteAccount()" style="width: 100%; padding: 10px; background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.5); border-radius: 8px; color: #f08080; font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 1px; transition: all 0.2s;" onmouseover="this.style.background='rgba(192,57,43,0.28)'" onmouseout="this.style.background='rgba(192,57,43,0.15)'">
+                        注销账号
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1574,6 +1617,97 @@
             // 跳转到登录页
             window.location.href = '/login.html';
         }
+
+
+        // ── 账号注销 ───────────────────────────────────────────────
+        function triggerDeleteAccount() {
+            var delBackend = document.getElementById('del-backend').checked;
+            var delGame    = document.getElementById('del-game').checked;
+            if (!delBackend && !delGame) { showDelResult('请至少勾选一种注销类型', false); return; }
+            var what = [];
+            if (delBackend) what.push('后台账号');
+            if (delGame)    what.push('游戏账号');
+            document.querySelector('#del-confirm-area div').textContent =
+                '⚠️ 确认注销 ' + what.join(' 和 ') + '？此操作无法撤销！';
+            document.getElementById('del-confirm-area').style.display = 'block';
+            document.getElementById('del-trigger-btn').style.display  = 'none';
+            document.getElementById('del-result').style.display       = 'none';
+        }
+
+        function cancelDeleteAccount() {
+            document.getElementById('del-confirm-area').style.display = 'none';
+            document.getElementById('del-trigger-btn').style.display  = 'block';
+        }
+
+        async function confirmDeleteAccount() {
+            var sessionToken = localStorage.getItem('sessionToken');
+            var delBackend   = document.getElementById('del-backend').checked;
+            var delGame      = document.getElementById('del-game').checked;
+            var confirmBtn   = document.querySelector('#del-confirm-area button:first-child');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = '注销中…';
+            try {
+                var resp = await fetch(API_BASE + '/account/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionToken: sessionToken, deleteBackend: delBackend, deleteGame: delGame })
+                });
+                var data = await resp.json();
+                document.getElementById('del-confirm-area').style.display = 'none';
+                if (data.success) {
+                    showDelResult('✅ ' + data.message, true);
+                    if (data.sessionInvalidated) {
+                        ['sessionToken','username','verifiedUids','verification','playerUid']
+                            .forEach(function(k) { localStorage.removeItem(k); });
+                        setTimeout(function() { window.location.href = '/login.html'; }, 2000);
+                    }
+                } else {
+                    showDelResult('❌ ' + (data.message || '注销失败'), false);
+                    document.getElementById('del-trigger-btn').style.display = 'block';
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = '确认注销';
+                }
+            } catch(err) {
+                document.getElementById('del-confirm-area').style.display = 'none';
+                showDelResult('⚠️ 请求失败：' + err.message, false);
+                document.getElementById('del-trigger-btn').style.display = 'block';
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '确认注销';
+            }
+        }
+
+        function showDelResult(msg, success) {
+            var el = document.getElementById('del-result');
+            el.style.display    = 'block';
+            el.style.background = success ? 'rgba(93,190,138,0.12)' : 'rgba(224,92,92,0.12)';
+            el.style.border     = success ? '1px solid rgba(93,190,138,0.35)' : '1px solid rgba(224,92,92,0.35)';
+            el.style.color      = success ? '#7dde9e' : '#f08080';
+            el.textContent      = msg;
+        }
+
+        function updateDelHint() {
+            var b = document.getElementById('del-backend') && document.getElementById('del-backend').checked;
+            var g = document.getElementById('del-game')    && document.getElementById('del-game').checked;
+            var hint = document.getElementById('del-hint');
+            if (!hint) return;
+            if (!b && !g) {
+                hint.textContent = '⚠️ 请至少选择一种注销类型。';
+            } else if (b && g) {
+                hint.innerHTML = '⚠️ 同时注销两个账号，IP 注册配额 -1。此操作<strong>不可撤销</strong>，请谨慎选择。';
+            } else if (b) {
+                hint.innerHTML = '⚠️ 仅删除后台账号（GM 面板账号），游戏账号保留。IP 配额 -1。此操作<strong>不可撤销</strong>。';
+            } else {
+                hint.innerHTML = '⚠️ 仅删除游戏账号（原神私服账号），后台账号保留。IP 配额 -1。此操作<strong>不可撤销</strong>。';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            ['del-backend','del-game'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('change', updateDelHint);
+            });
+        });
+
 
         /**
          * 加载用户的已验证UID列表

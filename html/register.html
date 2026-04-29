@@ -3,249 +3,628 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>账号注册 - 原神 GM 管理</title>
+    <title>原神私服 · 账号注册</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --gold: #c8a96e;
+            --gold-light: #e8cfa0;
+            --gold-dark: #a07840;
+            --deep: #0d1117;
+            --surface: rgba(255,255,255,0.06);
+            --surface-hover: rgba(255,255,255,0.10);
+            --border: rgba(200,169,110,0.25);
+            --border-strong: rgba(200,169,110,0.5);
+            --text: #e8dcc8;
+            --text-dim: rgba(232,220,200,0.6);
+            --success: #5dbe8a;
+            --error: #e05c5c;
+            --radius: 16px;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Noto Serif SC', 'Microsoft YaHei', serif;
             min-height: 100vh;
+            background: var(--deep);
+            background-image:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(120,90,50,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 90%, rgba(80,60,130,0.15) 0%, transparent 60%),
+                url('/data/bg/kun-gmligt.jpg') center/cover no-repeat fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: var(--text);
         }
-        .container {
-            background: white;
-            padding: 35px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            width: 440px;
+
+        /* Dark overlay for readability */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(8, 12, 20, 0.72);
+            backdrop-filter: blur(2px);
+            z-index: 0;
         }
-        h2 {
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Header */
+        .header {
             text-align: center;
-            margin-bottom: 25px;
-            color: #333;
-            font-size: 22px;
+            padding: 8px 0 4px;
         }
+
+        .header .logo-icon {
+            font-size: 48px;
+            line-height: 1;
+            filter: drop-shadow(0 0 12px rgba(200,169,110,0.4));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gold-light);
+            margin-top: 12px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(200,169,110,0.35);
+        }
+
+        .header p {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        /* Card */
+        .card {
+            background: rgba(15, 20, 30, 0.7);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            box-shadow:
+                0 4px 40px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gold);
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 14px;
+            background: linear-gradient(180deg, var(--gold), var(--gold-dark));
+            border-radius: 2px;
+        }
+
+        /* Quota bar */
+        .quota-bar {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quota-icon { font-size: 20px; }
+
+        .quota-info { flex: 1; }
+
+        .quota-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .quota-track {
+            background: rgba(255,255,255,0.08);
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .quota-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .quota-fill.full {
+            background: linear-gradient(90deg, #c0392b, var(--error));
+        }
+
+        .quota-count {
+            font-size: 12px;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+        }
+
+        /* Form */
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
+
         label {
             display: block;
-            margin-bottom: 6px;
-            color: #444;
-            font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
         }
-        input, select {
+
+        .input-wrap {
+            position: relative;
+        }
+
+        input[type="text"] {
             width: 100%;
-            padding: 11px 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-        input:focus, select:focus {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 13px 16px;
+            font-size: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text);
             outline: none;
-            border-color: #667eea;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
-        .hint {
+
+        input[type="text"]::placeholder {
+            color: rgba(232,220,200,0.25);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--gold);
+            background: rgba(200,169,110,0.07);
+            box-shadow: 0 0 0 3px rgba(200,169,110,0.12);
+        }
+
+        input[type="text"].invalid {
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(224,92,92,0.12);
+        }
+
+        .input-hint {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .input-hint.error { color: var(--error); }
+        .input-hint.ok { color: var(--success); }
+
+        /* Rules */
+        .rules {
+            background: rgba(200,169,110,0.06);
+            border: 1px solid rgba(200,169,110,0.15);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 24px;
+        }
+
+        .rules-title {
             font-size: 12px;
-            color: #999;
-            margin-top: 4px;
-        }
-        button {
-            width: 100%;
-            padding: 13px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            color: var(--gold);
+            margin-bottom: 8px;
             font-weight: 600;
-            cursor: pointer;
-            margin-top: 12px;
-            transition: opacity 0.3s;
+            letter-spacing: 1px;
         }
-        button:hover { opacity: 0.9; }
-        button:disabled {
-            background: #ccc;
+
+        .rules ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .rules ul li {
+            font-size: 12px;
+            color: var(--text-dim);
+            padding-left: 14px;
+            position: relative;
+        }
+
+        .rules ul li::before {
+            content: '·';
+            position: absolute;
+            left: 4px;
+            color: var(--gold-dark);
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 600;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+            background-size: 200% 100%;
+            color: #1a1008;
+            box-shadow: 0 4px 20px rgba(200,169,110,0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-position: 100% 0;
+            box-shadow: 0 6px 28px rgba(200,169,110,0.45);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
         }
-        .message {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
+
+        .btn-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(26,16,8,0.3);
+            border-top-color: #1a1008;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .btn.loading .btn-text { display: none; }
+        .btn.loading .btn-spinner { display: block; }
+
+        /* Result */
+        .result-box {
+            border-radius: 10px;
+            padding: 16px 20px;
             font-size: 14px;
             display: none;
+            animation: fadeIn 0.3s ease;
         }
-        .message.success { background: #d4edda; color: #155724; display: block; }
-        .message.error { background: #f8d7da; color: #721c24; display: block; }
-        .message.info { background: #d1ecf1; color: #0c5460; display: block; }
-        #qqStatus {
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-box.success {
+            display: block;
+            background: rgba(93,190,138,0.1);
+            border: 1px solid rgba(93,190,138,0.35);
+            color: #7dde9e;
+        }
+
+        .result-box.error {
+            display: block;
+            background: rgba(224,92,92,0.1);
+            border: 1px solid rgba(224,92,92,0.35);
+            color: #f08080;
+        }
+
+        .result-box .result-icon { font-size: 20px; margin-bottom: 6px; }
+
+        .result-box .result-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .result-box .result-account {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gold-light);
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 6px;
+            letter-spacing: 1px;
+        }
+
+        .result-box .result-note {
             font-size: 12px;
-            margin-top: 5px;
-            display: none;
+            opacity: 0.75;
+            margin-top: 4px;
         }
-        #qqStatus.ok { color: #28a745; display: block; }
-        #qqStatus.warn { color: #dc3545; display: block; }
+
+        /* Links */
+        .page-links {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .page-links a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .page-links a:hover { color: var(--gold-light); }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            font-size: 11px;
+            color: rgba(232,220,200,0.2);
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .card { padding: 24px 20px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2> 账号注册</h2>
-        <form id="registerForm">
-            <!-- 用户名 -->
-            <div class="form-group">
-                <label for="username">账号名</label>
-                <input type="text" id="username" maxlength="50" required
-                       placeholder="输入你想要的游戏账号名">
-                <div class="hint">支持任意文字（中文、英文、空格等），最多50字符</div>
-            </div>
+<div class="page-wrap">
 
-            <!-- QQ号 -->
-            <div class="form-group">
-                <label for="qq">绑定QQ号</label>
-                <input type="text" id="qq" required
-                       placeholder="输入你的QQ号">
-                <div class="hint">一个QQ号最多注册3个账号</div>
-                <div id="qqStatus"></div>
-            </div>
-
-            <!-- 服务器选择（多服务器架构自动显示） -->
-            <div class="form-group" id="serverGroup" style="display:none;">
-                <label for="serverUuid">目标服务器</label>
-                <select id="serverUuid">
-                    <option value="">主 Dispatch 服务器</option>
-                </select>
-            </div>
-
-            <button type="submit" id="submitBtn">📝 注册账号</button>
-        </form>
-        <div id="message" class="message"></div>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-icon">⚙️</div>
+        <h1>原神私服注册</h1>
+        <p>注册您的游戏账号，立即开始冒险</p>
     </div>
 
-    <script>
-        const form = document.getElementById('registerForm');
-        const messageDiv = document.getElementById('message');
-        const submitBtn = document.getElementById('submitBtn');
-        const qqInput = document.getElementById('qq');
-        const qqStatusDiv = document.getElementById('qqStatus');
-        const serverGroup = document.getElementById('serverGroup');
-        const serverSelect = document.getElementById('serverUuid');
+    <!-- Main Card -->
+    <div class="card">
+        <div class="card-title">账号注册</div>
 
-        // QQ号格式验证
-        const QQ_REGEX = /^[1-9]\d{4,14}$/;
+        <!-- IP Quota Display -->
+        <div class="quota-bar">
+            <span class="quota-icon">🛡️</span>
+            <div class="quota-info">
+                <div class="quota-label">本IP注册配额</div>
+                <div class="quota-track">
+                    <div class="quota-fill" id="quotaFill"></div>
+                </div>
+            </div>
+            <span class="quota-count" id="quotaText">加载中…</span>
+        </div>
 
-        // ========== 加载服务器列表 ==========
-        async function loadServers() {
-            try {
-                const res = await fetch('/api/account/servers');
-                const data = await res.json();
-                if (data.retcode === 200 && data.data && Object.keys(data.data).length > 0) {
-                    serverGroup.style.display = 'block';
-                    const servers = data.data;
-                    for (const [uuid, name] of Object.entries(servers)) {
-                        const option = document.createElement('option');
-                        option.value = uuid;
-                        option.textContent = name;
-                        serverSelect.appendChild(option);
-                    }
-                }
-            } catch (e) {
-                console.log('单服务器模式');
-            }
+        <!-- Result Box -->
+        <div class="result-box" id="resultBox">
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-account" id="resultAccount" style="display:none"></div>
+            <div class="result-note" id="resultNote"></div>
+        </div>
+
+        <!-- Form -->
+        <form id="registerForm" autocomplete="off">
+            <div class="form-group">
+                <label for="username">游戏账号名</label>
+                <div class="input-wrap">
+                    <input type="text" id="username" name="username"
+                           placeholder="输入您想要的账号名"
+                           maxlength="20" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="input-hint" id="usernameHint">仅支持字母、数字、下划线，3-20个字符</div>
+            </div>
+
+            <!-- Rules -->
+            <div class="rules">
+                <div class="rules-title">📋 注册须知</div>
+                <ul>
+                    <li>每个IP地址最多可注册 <strong style="color:var(--gold)">3</strong> 个账号</li>
+                    <li>账号名一经注册无法更改，请谨慎选择</li>
+                    <li>初始密码请在游戏内或联系管理员设置</li>
+                    <li>账号名只允许英文字母、数字、下划线</li>
+                </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                <span class="btn-text">立即注册</span>
+                <div class="btn-spinner"></div>
+            </button>
+        </form>
+    </div>
+
+    <!-- Page Links -->
+    <div class="page-links">
+        <a href="/html/index.html">返回主页</a>
+        &nbsp;·&nbsp;
+        <a href="/html/login.html">管理员登录</a>
+    </div>
+
+    <div class="footer">POWERED BY GRASSCUTTER · gc-GM</div>
+</div>
+
+<script>
+    const API_BASE = '';
+
+    // ── 工具函数 ──────────────────────────────────────────
+    function setResult(type, icon, title, account, note) {
+        const box = document.getElementById('resultBox');
+        box.className = 'result-box ' + type;
+        document.getElementById('resultIcon').textContent = icon;
+        document.getElementById('resultTitle').textContent = title;
+
+        const accEl = document.getElementById('resultAccount');
+        if (account) {
+            accEl.style.display = 'block';
+            accEl.textContent = account;
+        } else {
+            accEl.style.display = 'none';
         }
 
-        // ========== 显示消息 ==========
-        function showMessage(text, type) {
-            messageDiv.textContent = text;
-            messageDiv.className = 'message ' + type;
+        document.getElementById('resultNote').textContent = note || '';
+        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearResult() {
+        const box = document.getElementById('resultBox');
+        box.className = 'result-box';
+    }
+
+    // ── 用户名实时校验 ────────────────────────────────────
+    const usernameInput = document.getElementById('username');
+    const usernameHint  = document.getElementById('usernameHint');
+    const USERNAME_RE   = /^[a-zA-Z0-9_]{3,20}$/;
+
+    usernameInput.addEventListener('input', () => {
+        const val = usernameInput.value.trim();
+        clearResult();
+
+        if (val.length === 0) {
+            usernameInput.classList.remove('invalid');
+            usernameHint.className = 'input-hint';
+            usernameHint.textContent = '仅支持字母、数字、下划线，3-20个字符';
+        } else if (!USERNAME_RE.test(val)) {
+            usernameInput.classList.add('invalid');
+            usernameHint.className = 'input-hint error';
+            if (val.length < 3) {
+                usernameHint.textContent = '账号名至少需要3个字符';
+            } else if (val.length > 20) {
+                usernameHint.textContent = '账号名最多20个字符';
+            } else {
+                usernameHint.textContent = '只允许字母、数字、下划线';
+            }
+        } else {
+            usernameInput.classList.remove('invalid');
+            usernameHint.className = 'input-hint ok';
+            usernameHint.textContent = '✓ 格式正确';
+        }
+    });
+
+    // ── 加载配额 ──────────────────────────────────────────
+    async function loadQuota() {
+        try {
+            const resp = await fetch(API_BASE + '/api/register/quota');
+            const data = await resp.json();
+
+            const pct = Math.round((data.used / data.max) * 100);
+            const fill = document.getElementById('quotaFill');
+            fill.style.width = pct + '%';
+            if (data.remaining === 0) fill.classList.add('full');
+
+            document.getElementById('quotaText').textContent =
+                data.used + ' / ' + data.max;
+
+            // 如果已满，禁用表单
+            if (!data.allowed) {
+                document.getElementById('submitBtn').disabled = true;
+                setResult('error', '🚫', '注册配额已满',
+                    null,
+                    '该IP地址已注册 ' + data.max + ' 个账号，已达上限。如有疑问请联系管理员。');
+            }
+
+            return data;
+        } catch (e) {
+            document.getElementById('quotaText').textContent = '获取失败';
+            console.error('配额查询失败', e);
+        }
+    }
+
+    // ── 提交注册 ──────────────────────────────────────────
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = usernameInput.value.trim();
+        if (!username) {
+            usernameInput.focus();
+            return;
         }
 
-        // ========== QQ号实时查询注册状态 ==========
-        let qqCheckTimer = null;
-        qqInput.addEventListener('input', () => {
-            clearTimeout(qqCheckTimer);
-            qqStatusDiv.className = '';
-            qqStatusDiv.textContent = '';
+        if (!USERNAME_RE.test(username)) {
+            usernameInput.focus();
+            return;
+        }
 
-            const qq = qqInput.value.trim();
-            if (!QQ_REGEX.test(qq)) {
-                if (qq.length > 0) {
-                    qqStatusDiv.textContent = '⚠ QQ号格式不正确（5-15位纯数字，不能以0开头）';
-                    qqStatusDiv.className = 'warn';
-                }
-                return;
+        clearResult();
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.classList.add('loading');
+
+        try {
+            const resp = await fetch(API_BASE + '/api/register/account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            });
+
+            const data = await resp.json();
+
+            if (data.success) {
+                setResult(
+                    'success', '✅', '注册成功！',
+                    data.username,
+                    '账号已创建，请使用此账号登录游戏服务器。剩余配额：' +
+                    (data.remainingQuota !== undefined ? data.remainingQuota : '?') + ' 个'
+                );
+                usernameInput.value = '';
+                usernameInput.classList.remove('invalid');
+                usernameHint.className = 'input-hint';
+                usernameHint.textContent = '仅支持字母、数字、下划线，3-20个字符';
+                await loadQuota(); // 刷新配额显示
+            } else {
+                setResult('error', '❌', '注册失败', null, data.message || '未知错误');
             }
 
-            qqCheckTimer = setTimeout(async () => {
-                try {
-                    const res = await fetch('/api/account/qq-status?qq=' + qq);
-                    const data = await res.json();
-                    if (data.retcode === 200) {
-                        const remain = data.maxAllowed - data.registeredCount;
-                        if (data.canRegister) {
-                            qqStatusDiv.textContent = '✅ 已注册 ' + data.registeredCount + ' 个，还可注册 ' + remain + ' 个';
-                            qqStatusDiv.className = 'ok';
-                        } else {
-                            qqStatusDiv.textContent = '❌ 已注册 ' + data.registeredCount + ' 个，已达上限！';
-                            qqStatusDiv.className = 'warn';
-                        }
-                    }
-                } catch (e) {
-                    console.error('查询失败', e);
-                }
-            }, 500);
-        });
-
-        // ========== 提交注册 ==========
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const username = document.getElementById('username').value.trim();
-            const qq = qqInput.value.trim();
-            const serverUuid = document.getElementById('serverUuid').value;
-
-            if (!username) {
-                showMessage('请输入账号名', 'error');
-                return;
+        } catch (err) {
+            console.error('注册请求失败:', err);
+            setResult('error', '⚠️', '请求失败', null, '无法连接到服务器，请稍后重试');
+        } finally {
+            btn.classList.remove('loading');
+            // 如果配额没满，才重新启用按钮
+            const quota = await loadQuota();
+            if (!quota || quota.allowed) {
+                btn.disabled = false;
             }
-            if (!QQ_REGEX.test(qq)) {
-                showMessage('请输入正确的QQ号', 'error');
-                return;
-            }
+        }
+    });
 
-            submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ 注册中，请稍候...';
-            showMessage('正在连接服务器创建账号...', 'info');
-
-            try {
-                const res = await fetch('/api/account/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, qq, serverUuid })
-                });
-
-                const data = await res.json();
-
-                if (data.success || data.retcode === 200) {
-                    showMessage(data.message || '注册成功！', 'success');
-                    qqInput.dispatchEvent(new Event('input'));
-                } else {
-                    showMessage('❌ ' + (data.message || '注册失败'), 'error');
-                }
-            } catch (err) {
-                showMessage('❌ 网络错误：无法连接到服务器', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '📝 注册账号';
-            }
-        });
-
-        // 初始化
-        loadServers();
-    </script>
+    // ── 初始化 ────────────────────────────────────────────
+    loadQuota();
+</script>
 </body>
 </html>
