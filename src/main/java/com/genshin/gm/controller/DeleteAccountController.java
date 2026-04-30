@@ -162,7 +162,7 @@ public class DeleteAccountController {
         CodeEntry entry = pendingCodes.get(sessionToken);
         if (entry == null) {
             result.put("success", false);
-            result.put("message", "请先点击"获取验证码"，完成游戏内验证后再提交");
+            result.put("message", "请先点击【获取验证码】，完成游戏内验证后再提交");
             return ResponseEntity.ok(result);
         }
         if (entry.expired()) {
