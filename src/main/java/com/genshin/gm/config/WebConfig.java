@@ -17,7 +17,13 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(userAgentInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/api/**", "/data/**", "/download.html");
+                .excludePathPatterns(
+                        "/api/**",          // 所有 API 接口
+                        "/data/**",         // 静态数据文件
+                        "/download.html",   // 下载页自身
+                        "/register.html",   // 玩家注册页（安卓玩家需要访问）
+                        "/html/register.html"
+                );
     }
 
     @Override
@@ -39,7 +45,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // 配置CORS，允许所有来源访问API（包括proto端点）
         registry.addMapping("/api/**")
                 .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
