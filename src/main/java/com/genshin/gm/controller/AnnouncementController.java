@@ -1,5 +1,7 @@
 package com.genshin.gm.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.genshin.gm.config.ConfigLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.LocalDateTime;
@@ -25,57 +27,80 @@ import java.util.*;
 public class AnnouncementController {
 
     private static final Logger logger = LoggerFactory.getLogger(AnnouncementController.class);
-    private static final Path ANNOUNCEMENT_FILE = Paths.get("data", "announcement.json");
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT);
 
-    // ── 工具：读取存储文件 ────────────────────────────────────────────────
+    /** 公告文件路径，与 config.json、data/ 同级 */
+    private static File getFile() {
+        return new File("data" + File.separator + "announcement.json");
+    }
+
+    // ── 默认值 ────────────────────────────────────────────────────────────
+    private static Map<String, Object> defaultData() {
+        Map<String, Object> d = new LinkedHashMap<>();
+        d.put("title",     "📢 服务器公告");
+        d.put("content",   "欢迎来到原神私服！");
+        d.put("updatedAt", "");
+        d.put("enabled",   true);
+        return d;
+    }
+
+    // ── 读取 ──────────────────────────────────────────────────────────────
     @SuppressWarnings("unchecked")
     private Map<String, Object> readData() {
-        Map<String, Object> def = new LinkedHashMap<>();
-        def.put("title",   "📢 服务器公告");
-        def.put("content", "欢迎来到原神私服！");
-        def.put("updatedAt", "");
-        def.put("enabled", true);
-
-        if (!Files.exists(ANNOUNCEMENT_FILE)) return def;
+        File f = getFile();
+        if (!f.exists()) return defaultData();
         try {
-            String json = new String(Files.readAllBytes(ANNOUNCEMENT_FILE), StandardCharsets.UTF_8);
-            // 简单手写解析，避免引入额外依赖（项目已有 jackson）
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            Map<String, Object> data = mapper.readValue(json, LinkedHashMap.class);
-            return data;
+            return MAPPER.readValue(f, LinkedHashMap.class);
         } catch (Exception e) {
-            logger.error("读取公告文件失败", e);
-            return def;
+            logger.error("读取公告文件失败: {}", e.getMessage());
+            return defaultData();
         }
     }
 
+    // ── 写入 ──────────────────────────────────────────────────────────────
     private void writeData(Map<String, Object> data) throws Exception {
-        Files.createDirectories(ANNOUNCEMENT_FILE.getParent());
-        com.fasterxml.jackson.databind.ObjectMapper mapper =
-            new com.fasterxml.jackson.databind.ObjectMapper();
-        Files.write(ANNOUNCEMENT_FILE,
-            mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(data));
+        File f = getFile();
+        // 确保 data/ 目录存在
+        if (!f.getParentFile().exists()) {
+            boolean ok = f.getParentFile().mkdirs();
+            if (!ok) throw new RuntimeException("无法创建目录: " + f.getParentFile().getAbsolutePath());
+        }
+        MAPPER.writeValue(f, data);
+        logger.info("公告已写入: {}", f.getAbsolutePath());
     }
 
+    // ── Token 验证 ────────────────────────────────────────────────────────
     private boolean isAdmin(HttpServletRequest request, String bodyToken) {
-        String configToken = ConfigLoader.getConfig().getGrasscutter().getAdminToken();
-        if (configToken == null || configToken.isEmpty()) return false;
+        String configToken;
+        try {
+            configToken = ConfigLoader.getConfig().getGrasscutter().getAdminToken();
+        } catch (Exception e) {
+            logger.error("读取 adminToken 失败", e);
+            return false;
+        }
+        if (configToken == null || configToken.isEmpty()) {
+            logger.warn("adminToken 未配置");
+            return false;
+        }
         String token = bodyToken;
-        if (token == null) token = request.getHeader("X-Admin-Token");
-        if (token == null) token = request.getParameter("adminToken");
-        return configToken.trim().equals(token != null ? token.trim() : null);
+        if (token == null || token.isEmpty()) token = request.getHeader("X-Admin-Token");
+        if (token == null || token.isEmpty()) token = request.getParameter("adminToken");
+        boolean ok = configToken.trim().equals(token != null ? token.trim() : "");
+        if (!ok) logger.warn("adminToken 不匹配, 收到: [{}]", token);
+        return ok;
     }
 
-    // ── GET /api/announcement ────────────────────────────────────────────
+    // ── GET /api/announcement ─────────────────────────────────────────────
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAnnouncement() {
         Map<String, Object> data = readData();
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("success", true);
-        result.put("title",     data.getOrDefault("title",   "📢 服务器公告"));
-        result.put("content",   data.getOrDefault("content", "欢迎来到原神私服！"));
+        result.put("success",   true);
+        result.put("title",     data.getOrDefault("title",     "📢 服务器公告"));
+        result.put("content",   data.getOrDefault("content",   "欢迎来到原神私服！"));
         result.put("updatedAt", data.getOrDefault("updatedAt", ""));
-        result.put("enabled",   data.getOrDefault("enabled",  true));
+        result.put("enabled",   data.getOrDefault("enabled",   true));
         return ResponseEntity.ok(result);
     }
 
@@ -88,18 +113,20 @@ public class AnnouncementController {
         Map<String, Object> result = new LinkedHashMap<>();
         String adminToken = (String) body.get("adminToken");
 
+        logger.info("收到公告更新请求, token=[{}]", adminToken);
+
         if (!isAdmin(request, adminToken)) {
             result.put("success", false);
-            result.put("message", "无权限：adminToken 不正确");
+            result.put("message", "无权限：adminToken 不正确，请检查 config.json 中的 grasscutter.adminToken");
             return ResponseEntity.ok(result);
         }
 
-        String title   = (String) body.getOrDefault("title",   "📢 服务器公告");
-        String content = (String) body.getOrDefault("content", "");
+        String  title   = (String)  body.getOrDefault("title",   "📢 服务器公告");
+        String  content = (String)  body.getOrDefault("content", "");
         boolean enabled = !Boolean.FALSE.equals(body.getOrDefault("enabled", true));
 
+        if (title   == null || title.trim().isEmpty()) title = "📢 服务器公告";
         if (content == null) content = "";
-        if (title == null || title.trim().isEmpty()) title = "📢 服务器公告";
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("title",     title.trim());
@@ -110,7 +137,6 @@ public class AnnouncementController {
 
         try {
             writeData(data);
-            logger.info("公告已更新");
             result.put("success", true);
             result.put("message", "公告已保存");
         } catch (Exception e) {
