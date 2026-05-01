@@ -209,6 +209,7 @@
         <button class="tab-btn active" onclick="switchTab('pending',this)">📋 待审核指令</button>
         <button class="tab-btn"        onclick="switchTab('all',this)">📦 所有指令</button>
         <button class="tab-btn"        onclick="switchTab('ip',this)">🌐 IP 注册管理</button>
+        <button class="tab-btn"        onclick="switchTab('announcement',this)">📢 公告管理</button>
     </div>
 
     <div id="tab-pending" class="tab-content active">
@@ -235,6 +236,54 @@
                 </div>
             </div>
             <div class="card-body" id="list-ip"><div class="empty"><div class="spin"></div>加载中…</div></div>
+        </div>
+    </div>
+
+    <!-- 公告管理 -->
+    <div id="tab-announcement" class="tab-content">
+        <div class="card">
+            <div class="card-head">
+                <span class="card-title">📢 公告管理</span>
+                <span style="font-size:12px;color:#aaa;">内容将显示在登录页右侧</span>
+            </div>
+            <div class="card-body">
+                <div id="ann-save-result" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                    <!-- 编辑区 -->
+                    <div>
+                        <div class="mfield" style="margin-bottom:14px;">
+                            <label>公告标题</label>
+                            <input id="ann-title-input" type="text" style="width:100%;background:rgba(255,255,255,0.6);border:1px solid rgba(102,126,234,0.25);border-radius:8px;padding:9px 13px;font-size:14px;color:#333;outline:none;font-family:inherit;"
+                                placeholder="📢 服务器公告">
+                        </div>
+                        <div class="mfield" style="margin-bottom:14px;">
+                            <label>公告内容（支持换行）</label>
+                            <textarea id="ann-content-input" rows="10"
+                                style="width:100%;background:rgba(255,255,255,0.6);border:1px solid rgba(102,126,234,0.25);border-radius:8px;padding:9px 13px;font-size:14px;color:#333;outline:none;font-family:inherit;resize:vertical;line-height:1.7;"
+                                placeholder="在此输入公告内容…" oninput="previewAnn()"></textarea>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#555;">
+                                <input type="checkbox" id="ann-enabled" checked style="accent-color:#667eea;width:15px;height:15px;">
+                                显示公告
+                            </label>
+                        </div>
+                        <button class="btn btn-bl" onclick="saveAnnouncement()" style="width:100%;padding:11px;font-size:14px;">
+                            💾 保存公告
+                        </button>
+                    </div>
+
+                    <!-- 预览区 -->
+                    <div>
+                        <div class="mfield"><label>实时预览</label></div>
+                        <div style="background:linear-gradient(135deg,rgba(102,126,234,0.08),rgba(118,75,162,0.08));border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:20px;min-height:260px;">
+                            <div style="font-size:16px;font-weight:700;color:#667eea;margin-bottom:12px;" id="ann-preview-title">📢 服务器公告</div>
+                            <div style="background:rgba(255,255,255,0.55);border-radius:10px;padding:16px;font-size:14px;color:#333;line-height:1.85;white-space:pre-wrap;word-break:break-word;min-height:160px;" id="ann-preview-body">在左侧输入内容即可预览…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -350,9 +399,10 @@ async function switchTab(tab, btn) {
     btn.classList.add('active');
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    if (tab === 'pending')     await loadPending();
-    else if (tab === 'all')    await loadAll();
-    else if (tab === 'ip')     await loadIp();
+    if (tab === 'pending')            await loadPending();
+    else if (tab === 'all')           await loadAll();
+    else if (tab === 'ip')            await loadIp();
+    else if (tab === 'announcement')  await loadAnnouncement();
 }
 
 async function loadStats() {
@@ -561,6 +611,59 @@ async function delRecord(id, ip) {
 }
 
 window.onload = init;
+
+// ── 公告管理 ────────────────────────────────────────────────────────────
+async function loadAnnouncement() {
+    try {
+        const r = await fetch('/api/announcement');
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById('ann-title-input').value   = d.title   || '';
+            document.getElementById('ann-content-input').value = d.content || '';
+            document.getElementById('ann-enabled').checked     = d.enabled !== false;
+            previewAnn();
+        }
+    } catch(e) { console.error('加载公告失败', e); }
+}
+
+function previewAnn() {
+    const title   = document.getElementById('ann-title-input').value   || '📢 服务器公告';
+    const content = document.getElementById('ann-content-input').value || '（暂无内容）';
+    document.getElementById('ann-preview-title').textContent = title;
+    document.getElementById('ann-preview-body').textContent  = content;
+}
+
+async function saveAnnouncement() {
+    const title   = document.getElementById('ann-title-input').value.trim();
+    const content = document.getElementById('ann-content-input').value.trim();
+    const enabled = document.getElementById('ann-enabled').checked;
+    const resEl   = document.getElementById('ann-save-result');
+
+    try {
+        const r = await fetch('/api/announcement/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminToken: T, title, content, enabled })
+        });
+        const d = await r.json();
+        resEl.style.display = 'block';
+        if (d.success) {
+            resEl.style.background = '#d4edda'; resEl.style.color = '#155724';
+            resEl.style.border = '1px solid #c3e6cb';
+            resEl.textContent = '✅ ' + d.message;
+        } else {
+            resEl.style.background = '#f8d7da'; resEl.style.color = '#721c24';
+            resEl.style.border = '1px solid #f5c6cb';
+            resEl.textContent = '❌ ' + (d.message || '保存失败');
+        }
+        setTimeout(() => { resEl.style.display = 'none'; }, 3000);
+    } catch(e) {
+        resEl.style.display = 'block';
+        resEl.style.background = '#f8d7da'; resEl.style.color = '#721c24';
+        resEl.textContent = '❌ 请求失败：' + e.message;
+    }
+}
+
 </script>
 </body>
 </html>

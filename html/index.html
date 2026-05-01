@@ -30,8 +30,9 @@
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            max-width: 600px;
-            width: 100%;
+            width: 75vw;
+            max-width: 1200px;
+            min-width: 320px;
         }
 
         h1 {
@@ -229,6 +230,55 @@
             background: #45a049;
         }
 
+        /* ── 星标书签按钮 ── */
+        .star-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 0 4px;
+            line-height: 1;
+            transition: transform 0.2s;
+            vertical-align: middle;
+            opacity: 0.55;
+            flex-shrink: 0;
+        }
+        .star-btn:hover  { transform: scale(1.25); opacity: 1; }
+        .star-btn.active { opacity: 1; }
+
+        /* 书签区域 */
+        #bookmarks-section .bk-empty {
+            text-align: center; color: #888;
+            padding: 32px 0; font-size: 14px;
+        }
+        .bk-item {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(102,126,234,0.2);
+            border-radius: 8px; padding: 11px 14px; margin-bottom: 10px;
+            animation: fadeIn 0.2s;
+        }
+        .bk-cmd {
+            flex: 1; font-family: 'Courier New', monospace;
+            font-size: 13px; color: #333; word-break: break-all;
+        }
+        .bk-label {
+            font-size: 12px; color: #888; white-space: nowrap;
+            margin-right: 4px;
+        }
+        .bk-copy {
+            padding: 5px 12px; background: #667eea; color: white;
+            border: none; border-radius: 6px; font-size: 12px;
+            cursor: pointer; white-space: nowrap; transition: background .2s;
+        }
+        .bk-copy:hover { background: #5a70d8; }
+        .bk-del {
+            background: none; border: none; cursor: pointer;
+            font-size: 18px; color: #ccc; transition: color .2s; padding: 0 2px;
+        }
+        .bk-del:hover { color: #e74c3c; }
+
         .loading {
             text-align: center;
             color: #667eea;
@@ -288,6 +338,7 @@
             .container {
                 padding: 20px;
                 margin-top: 80px;
+                width: 95vw;
             }
 
             h1 {
@@ -1240,6 +1291,7 @@
             <button class="menu-btn active" onclick="showSection('items')">物品生成</button>
             <button class="menu-btn" onclick="showSection('quest')">任务</button>
             <button class="menu-btn" onclick="showSection('custom')">自定义指令</button>
+            <button class="menu-btn" id="bookmarks-btn" onclick="showSection('bookmarks')">⭐ 书签</button>
             <button class="menu-btn" onclick="showSection('community')">玩家指令广场</button>
         </div>
 
@@ -1373,6 +1425,17 @@
             </div>
         </div>
 
+        <!-- 书签区域 -->
+        <div id="bookmarks-section" class="section" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                <h2 style="color:#667eea;">⭐ 书签收藏</h2>
+                <button onclick="clearAllBookmarks()" style="padding:7px 16px;background:rgba(220,53,69,0.12);color:#dc3545;border:1px solid rgba(220,53,69,0.3);border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;">
+                    🗑️ 清空书签
+                </button>
+            </div>
+            <div id="bk-list"></div>
+        </div>
+
         <!-- 玩家指令广场区域 -->
         <div id="community-section" class="section">
             <div class="sub-menu">
@@ -1447,8 +1510,11 @@
 
         <!-- 结果显示 -->
         <div id="result-box" class="result-box">
-            <div class="command-text" id="command-text"></div>
-            <button class="copy-btn" onclick="copyCommand()">📋 复制指令</button>
+            <div style="display:flex;align-items:flex-start;gap:8px;">
+                <div class="command-text" id="command-text" style="flex:1;margin-bottom:0;"></div>
+                <button class="star-btn" id="star-btn" onclick="toggleBookmark()" title="收藏到书签">☆</button>
+            </div>
+            <button class="copy-btn" onclick="copyCommand()" style="margin-top:10px;">📋 复制指令</button>
         </div>
     </div>
 
@@ -1949,6 +2015,7 @@
 
         // 显示主功能区（带过渡动画）
         function showSection(section) {
+            if (section === 'bookmarks') renderBookmarks();
             document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
 
@@ -2428,6 +2495,8 @@
         function showResult(command) {
             document.getElementById('command-text').textContent = command;
             document.getElementById('result-box').classList.add('show');
+            // 更新星标状态
+            updateStarBtn(command);
         }
 
         // 复制指令
@@ -2442,6 +2511,107 @@
                 }, 2000);
             });
         }
+
+        // ══════════════════════════════════════════════
+        // 书签系统
+        // ══════════════════════════════════════════════
+        const BK_KEY = 'gm_bookmarks';
+
+        function getBookmarks() {
+            try { return JSON.parse(localStorage.getItem(BK_KEY) || '[]'); }
+            catch(e) { return []; }
+        }
+        function saveBookmarks(bks) {
+            localStorage.setItem(BK_KEY, JSON.stringify(bks));
+            // 更新菜单按钮角标
+            const btn = document.getElementById('bookmarks-btn');
+            if (btn) btn.textContent = bks.length > 0 ? `⭐ 书签 (${bks.length})` : '⭐ 书签';
+        }
+
+        function updateStarBtn(command) {
+            const btn = document.getElementById('star-btn');
+            if (!btn || !command) return;
+            const bks = getBookmarks();
+            const saved = bks.some(b => b.cmd === command);
+            btn.textContent = saved ? '★' : '☆';
+            btn.classList.toggle('active', saved);
+            btn.title = saved ? '取消收藏' : '收藏到书签';
+        }
+
+        function toggleBookmark() {
+            const command = document.getElementById('command-text').textContent;
+            if (!command) return;
+            let bks = getBookmarks();
+            const idx = bks.findIndex(b => b.cmd === command);
+            if (idx >= 0) {
+                bks.splice(idx, 1);
+            } else {
+                bks.unshift({ cmd: command, ts: Date.now() });
+            }
+            saveBookmarks(bks);
+            updateStarBtn(command);
+            // 如果当前在书签页则刷新
+            if (document.getElementById('bookmarks-section').style.display !== 'none') {
+                renderBookmarks();
+            }
+        }
+
+        function renderBookmarks() {
+            const bks = getBookmarks();
+            const list = document.getElementById('bk-list');
+            // 更新菜单角标
+            const btn = document.getElementById('bookmarks-btn');
+            if (btn) btn.textContent = bks.length > 0 ? `⭐ 书签 (${bks.length})` : '⭐ 书签';
+
+            if (bks.length === 0) {
+                list.innerHTML = '<div class="bk-empty">📭 暂无收藏<br><span style="font-size:12px;color:#aaa;margin-top:6px;display:block;">生成指令后点击右侧 ☆ 即可收藏</span></div>';
+                return;
+            }
+            list.innerHTML = bks.map((b, i) => {
+                const date = new Date(b.ts);
+                const label = `${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+                return `<div class="bk-item">
+                    <span class="bk-label">${label}</span>
+                    <span class="bk-cmd">${escHtml(b.cmd)}</span>
+                    <button class="bk-copy" onclick="bkCopy(this, '${escAttr(b.cmd)}')">📋 复制</button>
+                    <button class="bk-del" onclick="bkDel(${i})" title="删除">×</button>
+                </div>`;
+            }).join('');
+        }
+
+        function escHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+        function escAttr(t) { return t.replace(/'/g, "\'").replace(/"/g, '&quot;'); }
+
+        function bkCopy(btn, cmd) {
+            navigator.clipboard.writeText(cmd).then(() => {
+                const orig = btn.textContent;
+                btn.textContent = '✅ 已复制';
+                setTimeout(() => { btn.textContent = orig; }, 1800);
+            });
+        }
+
+        function bkDel(i) {
+            let bks = getBookmarks();
+            bks.splice(i, 1);
+            saveBookmarks(bks);
+            renderBookmarks();
+        }
+
+        function clearAllBookmarks() {
+            if (!confirm('确定要清空所有书签吗？')) return;
+            saveBookmarks([]);
+            renderBookmarks();
+            // 如果当前显示的指令在书签里，更新星标
+            const cmd = document.getElementById('command-text').textContent;
+            if (cmd) updateStarBtn(cmd);
+        }
+
+        // 初始化角标
+        (function initBkBadge() {
+            const bks = getBookmarks();
+            const btn = document.getElementById('bookmarks-btn');
+            if (btn && bks.length > 0) btn.textContent = `⭐ 书签 (${bks.length})`;
+        })();
 
         // ========== Grasscutter 服务器连接功能 ==========
 
