@@ -119,7 +119,7 @@ public class PlayerCommandController {
         String configAdminToken = ConfigLoader.getConfig().getGrasscutter().getAdminToken();
 
         if (configAdminToken == null || configAdminToken.isEmpty()
-                || "CHANGE_ME_TO_A_SECURE_RANDOM_STRING".equals(configAdminToken)) {
+                ) {
             SecurityLogger.logAction(getClientIp(request), null, null, "ADMIN_REJECTED",
                     "adminToken未配置，拒绝管理请求");
             Map<String, Object> err = new HashMap<>();
