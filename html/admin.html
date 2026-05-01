@@ -3,142 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理后台 · 原神私服</title>
+    <title>管理后台 - Genshin GM Tool</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; }
 
-        :root {
-            --gold:#c8a96e; --gold-l:#e8cfa0; --gold-d:#a07840;
-            --bg:#0c1018;
-            --sf:rgba(255,255,255,0.05); --sf2:rgba(255,255,255,0.08);
-            --bd:rgba(200,169,110,0.2);  --bd2:rgba(200,169,110,0.4);
-            --tx:#e8dcc8; --tx2:rgba(232,220,200,0.55);
-            --gr:#5dbe8a; --rd:#e05c5c; --yw:#e8b84b; --bl:#5b9cf6;
-            --r:12px;
+        body {
+            font-family:'Microsoft YaHei',Arial,sans-serif;
+            background:url('/data/bg/kun-gmligt.jpg') no-repeat center center fixed;
+            background-size:cover;
+            min-height:100vh;
+            padding:30px 20px 60px;
         }
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Noto Serif SC',serif;background:var(--bg);
-            background-image:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(120,90,40,.14) 0%,transparent 55%),
-            url('/data/bg/kun-gmligt.jpg') center/cover no-repeat fixed;
-            min-height:100vh;color:var(--tx);}
-        body::before{content:'';position:fixed;inset:0;background:rgba(8,12,20,.78);backdrop-filter:blur(2px);z-index:0;}
-        .page{position:relative;z-index:1;max-width:1320px;margin:0 auto;padding:28px 24px 60px;}
+
+        .page {
+            width:75vw; max-width:1400px; min-width:320px;
+            margin:0 auto;
+        }
 
         /* Header */
-        .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px;}
-        .hdr h1{font-size:22px;color:var(--gold-l);letter-spacing:2px;font-weight:700;}
-        .back-link{font-size:13px;color:var(--gold);text-decoration:none;border:1px solid var(--bd);padding:7px 14px;border-radius:8px;transition:all .2s;}
-        .back-link:hover{background:rgba(200,169,110,.1);border-color:var(--bd2);}
+        .hdr {
+            background:rgba(255,255,255,0.45);
+            backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+            border:1px solid rgba(255,255,255,0.3);
+            border-radius:16px; padding:20px 28px;
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+            box-shadow:0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom:24px;
+        }
+        .hdr h1 { font-size:22px; color:#667eea; font-weight:700; }
+        .back-link {
+            font-size:13px; color:#667eea; text-decoration:none;
+            border:1px solid rgba(102,126,234,0.4); padding:7px 16px; border-radius:8px;
+            background:rgba(255,255,255,0.4); transition:all .2s; backdrop-filter:blur(10px);
+        }
+        .back-link:hover { background:#667eea; color:white; }
 
         /* Stats */
-        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:28px;}
-        .stat{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:18px;text-align:center;}
-        .stat-num{font-size:30px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--gold-l);}
-        .stat-lbl{font-size:11px;color:var(--tx2);margin-top:4px;letter-spacing:1px;}
+        .stats {
+            display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+            gap:14px; margin-bottom:24px;
+        }
+        .stat {
+            background:rgba(255,255,255,0.45);
+            backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+            border:1px solid rgba(255,255,255,0.3);
+            border-radius:14px; padding:20px; text-align:center;
+            box-shadow:0 4px 16px rgba(0,0,0,0.08);
+        }
+        .stat-num { font-size:30px; font-weight:700; color:#667eea; }
+        .stat-lbl { font-size:11px; color:#888; margin-top:4px; letter-spacing:.8px; }
 
         /* Tabs */
-        .tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:5px;width:fit-content;flex-wrap:wrap;}
-        .tab-btn{padding:9px 18px;background:none;border:none;border-radius:8px;cursor:pointer;font-size:13px;color:var(--tx2);font-family:inherit;letter-spacing:.5px;transition:all .2s;white-space:nowrap;}
-        .tab-btn.active{background:rgba(200,169,110,.18);color:var(--gold-l);font-weight:600;}
-        .tab-btn:hover:not(.active){color:var(--tx);background:var(--sf2);}
-        .tab-content{display:none;}.tab-content.active{display:block;}
+        .tabs {
+            display:flex; gap:4px; margin-bottom:20px;
+            background:rgba(255,255,255,0.35); backdrop-filter:blur(10px);
+            border:1px solid rgba(255,255,255,0.3);
+            border-radius:12px; padding:5px; width:fit-content; flex-wrap:wrap;
+        }
+        .tab-btn {
+            padding:9px 20px; background:none; border:none; border-radius:8px;
+            cursor:pointer; font-size:13px; color:#666; font-family:inherit;
+            letter-spacing:.5px; transition:all .2s; white-space:nowrap; font-weight:600;
+        }
+        .tab-btn.active { background:linear-gradient(135deg,#667eea,#764ba2); color:white; box-shadow:0 2px 10px rgba(102,126,234,0.3); }
+        .tab-btn:hover:not(.active) { background:rgba(102,126,234,0.1); color:#667eea; }
+        .tab-content{display:none;} .tab-content.active{display:block;}
 
         /* Card */
-        .card{background:rgba(12,16,24,.7);border:1px solid var(--bd);border-radius:var(--r);backdrop-filter:blur(16px);overflow:hidden;}
-        .card-head{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-        .card-title{font-size:13px;color:var(--gold);letter-spacing:1.5px;font-weight:600;}
-        .card-body{padding:20px;}
+        .card {
+            background:rgba(255,255,255,0.45);
+            backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+            border:1px solid rgba(255,255,255,0.3);
+            border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.1);
+            overflow:hidden;
+        }
+        .card-head {
+            padding:16px 22px;
+            background:rgba(255,255,255,0.3);
+            border-bottom:1px solid rgba(102,126,234,0.12);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+        }
+        .card-title { font-size:14px; font-weight:700; color:#667eea; letter-spacing:.8px; }
+        .card-body { padding:20px; }
 
         /* Table */
-        .tbl{width:100%;border-collapse:collapse;font-size:13px;}
-        .tbl th{padding:10px 14px;text-align:left;color:var(--tx2);font-weight:600;letter-spacing:.8px;font-size:11px;border-bottom:1px solid var(--bd);}
-        .tbl td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
-        .tbl tr:last-child td{border-bottom:none;}
-        .tbl tr:hover td{background:rgba(255,255,255,.025);}
-        .mono{font-family:'JetBrains Mono',monospace;}
+        .tbl { width:100%; border-collapse:collapse; font-size:13px; }
+        .tbl th { padding:10px 14px; text-align:left; color:#888; font-weight:600; font-size:11px; letter-spacing:.8px; border-bottom:1px solid rgba(102,126,234,0.1); }
+        .tbl td { padding:10px 14px; border-bottom:1px solid rgba(0,0,0,0.03); vertical-align:middle; }
+        .tbl tr:last-child td { border-bottom:none; }
+        .tbl tr:hover td { background:rgba(102,126,234,0.04); }
+        .mono { font-family:'Courier New',monospace; }
 
         /* Badges */
-        .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;}
-        .b-pending{background:rgba(232,184,75,.15);color:var(--yw);border:1px solid rgba(232,184,75,.3);}
-        .b-approved{background:rgba(93,190,138,.15);color:var(--gr);border:1px solid rgba(93,190,138,.3);}
-        .b-rejected{background:rgba(224,92,92,.15);color:var(--rd);border:1px solid rgba(224,92,92,.3);}
+        .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+        .b-pending  { background:rgba(232,184,75,.18); color:#b8860b; border:1px solid rgba(232,184,75,.35); }
+        .b-approved { background:rgba(40,167,69,.15);  color:#155724; border:1px solid rgba(40,167,69,.3); }
+        .b-rejected { background:rgba(220,53,69,.15);  color:#721c24; border:1px solid rgba(220,53,69,.3); }
 
         /* Quota bar */
-        .qbar-wrap{display:flex;align-items:center;gap:8px;}
-        .qbar{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;min-width:60px;}
-        .qbar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold-d),var(--gold));transition:width .4s;}
-        .qbar-fill.full{background:linear-gradient(90deg,#b83030,var(--rd));}
-        .qbar-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);white-space:nowrap;}
+        .qbar-wrap { display:flex; align-items:center; gap:8px; }
+        .qbar { flex:1; height:6px; background:rgba(102,126,234,0.12); border-radius:4px; overflow:hidden; min-width:60px; }
+        .qbar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#667eea,#764ba2); transition:width .4s; }
+        .qbar-fill.full { background:linear-gradient(90deg,#c0392b,#e74c3c); }
+        .qbar-num { font-size:12px; color:#667eea; font-weight:700; white-space:nowrap; }
 
         /* Buttons */
-        .btn{padding:5px 12px;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;letter-spacing:.3px;transition:all .15s;}
-        .btn+.btn{margin-left:4px;}
-        .btn-gr{background:rgba(93,190,138,.18);color:var(--gr);border:1px solid rgba(93,190,138,.35);}
-        .btn-gr:hover{background:rgba(93,190,138,.3);}
-        .btn-rd{background:rgba(224,92,92,.18);color:var(--rd);border:1px solid rgba(224,92,92,.35);}
-        .btn-rd:hover{background:rgba(224,92,92,.3);}
-        .btn-yw{background:rgba(232,184,75,.15);color:var(--yw);border:1px solid rgba(232,184,75,.3);}
-        .btn-yw:hover{background:rgba(232,184,75,.28);}
-        .btn-bl{background:rgba(91,156,246,.18);color:var(--bl);border:1px solid rgba(91,156,246,.35);}
-        .btn-bl:hover{background:rgba(91,156,246,.3);}
-        .btn-gh{background:var(--sf2);color:var(--tx2);border:1px solid var(--bd);}
-        .btn-gh:hover{color:var(--tx);background:rgba(255,255,255,.1);}
+        .btn { padding:5px 13px; border:none; border-radius:7px; cursor:pointer; font-size:12px; font-family:inherit; font-weight:600; transition:all .15s; }
+        .btn+.btn { margin-left:4px; }
+        .btn-gr  { background:rgba(40,167,69,.15);  color:#28a745; border:1px solid rgba(40,167,69,.3); }
+        .btn-gr:hover  { background:rgba(40,167,69,.28); }
+        .btn-rd  { background:rgba(220,53,69,.15);  color:#dc3545; border:1px solid rgba(220,53,69,.3); }
+        .btn-rd:hover  { background:rgba(220,53,69,.28); }
+        .btn-yw  { background:rgba(255,193,7,.15);  color:#856404; border:1px solid rgba(255,193,7,.3); }
+        .btn-yw:hover  { background:rgba(255,193,7,.28); }
+        .btn-bl  { background:rgba(102,126,234,.15); color:#667eea; border:1px solid rgba(102,126,234,.3); }
+        .btn-bl:hover  { background:rgba(102,126,234,.28); }
+        .btn-gh  { background:rgba(255,255,255,.4);  color:#555; border:1px solid rgba(0,0,0,.1); }
+        .btn-gh:hover  { background:rgba(255,255,255,.7); }
 
         /* Search */
-        .search-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-        .sinput{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:7px 13px;font-size:13px;color:var(--tx);font-family:'JetBrains Mono',monospace;outline:none;min-width:180px;}
-        .sinput::placeholder{color:var(--tx2);}
-        .sinput:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,169,110,.1);}
+        .search-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .sinput {
+            background:rgba(255,255,255,0.5); border:1px solid rgba(102,126,234,0.25);
+            border-radius:8px; padding:7px 13px; font-size:13px; color:#333;
+            outline:none; min-width:180px; transition:all .2s;
+        }
+        .sinput::placeholder { color:#aaa; }
+        .sinput:focus { border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,0.1); }
 
-        /* Account chips */
-        .acc-list{display:flex;flex-wrap:wrap;gap:5px;}
-        .acc-chip{display:flex;align-items:center;gap:5px;background:var(--sf2);border:1px solid var(--bd);border-radius:6px;padding:3px 9px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--tx2);}
-        .chip-del{cursor:pointer;color:var(--rd);font-size:15px;line-height:1;opacity:.6;}
-        .chip-del:hover{opacity:1;}
+        /* Acc chips */
+        .acc-chip {
+            display:inline-flex; align-items:center; gap:5px;
+            background:rgba(102,126,234,0.1); border:1px solid rgba(102,126,234,0.2);
+            border-radius:6px; padding:3px 9px; font-size:12px; font-family:'Courier New',monospace; color:#444;
+        }
+        .chip-del { cursor:pointer; color:#dc3545; font-size:15px; line-height:1; opacity:.6; }
+        .chip-del:hover { opacity:1; }
 
         /* Modal */
-        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;padding:20px;}
-        .modal.open{display:flex;}
-        .mbox{background:rgba(14,18,28,.95);border:1px solid var(--bd2);border-radius:14px;padding:26px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;backdrop-filter:blur(20px);}
-        .mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
-        .mhead h2{font-size:15px;color:var(--gold-l);letter-spacing:1px;}
-        .mclose{background:none;border:none;font-size:22px;color:var(--tx2);cursor:pointer;}
-        .mclose:hover{color:var(--tx);}
-        .mfield{margin-bottom:16px;}
-        .mfield label{display:block;font-size:11px;color:var(--tx2);letter-spacing:1px;margin-bottom:6px;}
-        .mfield .val{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;font-size:13px;color:var(--tx);word-break:break-all;font-family:'JetBrains Mono',monospace;}
-        .mfield textarea,.mfield select{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;font-size:13px;color:var(--tx);font-family:inherit;outline:none;resize:vertical;}
-        .mfield textarea:focus,.mfield select:focus{border-color:var(--gold);}
-        .mfield select option{background:#1a1f2e;}
-        .mfooter{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
-        .mfield input[type=number]{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;text-align:center;}
-        .mfield input[type=number]:focus{border-color:var(--gold);}
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+        .modal.open { display:flex; }
+        .mbox {
+            background:rgba(255,255,255,0.88);
+            backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+            border:1px solid rgba(255,255,255,0.5);
+            border-radius:16px; padding:28px; width:100%; max-width:560px; max-height:90vh;
+            overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2);
+        }
+        .mhead { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .mhead h2 { font-size:16px; color:#667eea; font-weight:700; }
+        .mclose { background:none; border:none; font-size:22px; color:#aaa; cursor:pointer; }
+        .mclose:hover { color:#333; }
+        .mfield { margin-bottom:16px; }
+        .mfield label { display:block; font-size:11px; color:#888; letter-spacing:.8px; margin-bottom:6px; font-weight:600; }
+        .mfield .val { background:rgba(102,126,234,0.06); border:1px solid rgba(102,126,234,0.15); border-radius:8px; padding:9px 13px; font-size:13px; color:#333; word-break:break-all; font-family:'Courier New',monospace; }
+        .mfield textarea,.mfield select { width:100%; background:rgba(255,255,255,0.6); border:1px solid rgba(102,126,234,0.25); border-radius:8px; padding:9px 13px; font-size:13px; color:#333; font-family:inherit; outline:none; resize:vertical; }
+        .mfield textarea:focus,.mfield select:focus { border-color:#667eea; }
+        .mfield select option { background:#fff; }
+        .mfooter { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+        .mfield input[type=number] { width:100%; background:rgba(255,255,255,0.6); border:1px solid rgba(102,126,234,0.25); border-radius:8px; padding:9px 13px; color:#333; font-size:14px; outline:none; text-align:center; }
+        .mfield input[type=number]:focus { border-color:#667eea; }
 
         /* Empty / Loading */
-        .empty{text-align:center;padding:52px 20px;color:var(--tx2);}
-        .empty-icon{font-size:42px;margin-bottom:12px;}
-        .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(200,169,110,.3);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
-        @keyframes spin{to{transform:rotate(360deg);}}
+        .empty { text-align:center; padding:52px 20px; color:#999; }
+        .empty-icon { font-size:42px; margin-bottom:12px; }
+        .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(102,126,234,.3); border-top-color:#667eea; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+        @keyframes spin { to{transform:rotate(360deg)} }
 
         /* Toast */
-        .toast{position:fixed;top:22px;right:22px;z-index:9999;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;max-width:320px;display:none;animation:sIn .25s ease;}
-        .toast.show{display:block;}
-        .toast.ok{background:rgba(93,190,138,.18);border:1px solid rgba(93,190,138,.4);color:#7dde9e;}
-        .toast.err{background:rgba(224,92,92,.18);border:1px solid rgba(224,92,92,.4);color:#f08080;}
-        @keyframes sIn{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:none;}}
+        .toast { position:fixed; top:22px; right:22px; z-index:9999; padding:11px 20px; border-radius:10px; font-size:13px; font-weight:600; max-width:320px; display:none; }
+        .toast.show { display:block; animation:toastIn .25s ease; }
+        .toast.ok  { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+        .toast.err { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+        @keyframes toastIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:none} }
 
-        @media(max-width:600px){.tabs{width:100%;}.tbl{font-size:12px;}.tbl th,.tbl td{padding:8px 9px;}}
+        @media(max-width:768px) {
+            .page { width:95vw; }
+            .tabs { width:100%; }
+            .tbl { font-size:12px; }
+            .tbl th,.tbl td { padding:8px 9px; }
+        }
     </style>
 </head>
 <body>
 <div class="page">
 
+    <!-- 头部 -->
     <div class="hdr">
         <h1>🛠️ 管理后台</h1>
         <a href="index.html" class="back-link">← 返回首页</a>
     </div>
 
-    <!-- Stats -->
+    <!-- 统计 -->
     <div class="stats">
         <div class="stat"><div class="stat-num" id="st-total">—</div><div class="stat-lbl">总指令数</div></div>
         <div class="stat"><div class="stat-num" id="st-pending">—</div><div class="stat-lbl">待审核</div></div>
@@ -150,8 +206,8 @@
 
     <!-- Tabs -->
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('pending',this)">待审核指令</button>
-        <button class="tab-btn"        onclick="switchTab('all',this)">所有指令</button>
+        <button class="tab-btn active" onclick="switchTab('pending',this)">📋 待审核指令</button>
+        <button class="tab-btn"        onclick="switchTab('all',this)">📦 所有指令</button>
         <button class="tab-btn"        onclick="switchTab('ip',this)">🌐 IP 注册管理</button>
     </div>
 
@@ -215,14 +271,14 @@
 <!-- Modal: 调整 IP 配额 -->
 <div class="modal" id="m-ip">
     <div class="mbox">
-        <div class="mhead"><h2>调整 IP 配额</h2><button class="mclose" onclick="closeM('m-ip')">×</button></div>
+        <div class="mhead"><h2>⚙️ 调整 IP 配额</h2><button class="mclose" onclick="closeM('m-ip')">×</button></div>
         <div class="mfield"><label>IP 地址</label><div class="val" id="ip-edit-addr"></div></div>
         <div class="mfield"><label>当前已用配额</label><div class="val" id="ip-edit-cur"></div></div>
         <div class="mfield">
             <label>设置新的已用配额（0 = 完全清零，最大 99）</label>
             <input type="number" id="ip-edit-val" min="0" max="99">
         </div>
-        <div style="font-size:12px;color:rgba(232,184,75,.7);margin:-8px 0 14px;line-height:1.5;">
+        <div style="font-size:12px;color:#856404;background:#fff3cd;border:1px solid #ffc107;border-radius:7px;padding:8px 12px;margin:-4px 0 14px;line-height:1.5;">
             ⚠️ 减少时从最近记录开始删；增加时插入占位记录
         </div>
         <div class="mfooter">
@@ -236,184 +292,217 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────────
 let T = '', curTab = 'pending', rId = null, rAct = null, curIp = null, ipData = [];
 
-// ── Util ───────────────────────────────────────────────────────────
 let _tt;
-function toast(msg, ok=true){
-    const el=document.getElementById('toast');
-    el.textContent=msg; el.className='toast show '+(ok?'ok':'err');
-    clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3000);
+function toast(msg, ok=true) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.className = 'toast show ' + (ok ? 'ok' : 'err');
+    clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 3000);
 }
-function openM(id){document.getElementById(id).classList.add('open');}
-function closeM(id){document.getElementById(id).classList.remove('open');}
-function esc(t){if(!t)return'';const d=document.createElement('div');d.textContent=String(t);return d.innerHTML;}
-function fmt(s){if(!s)return'—';const d=new Date(s),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;}
-const CATS={item:'物品',weapon:'武器',avatar:'角色',quest:'任务',scene:'场景',other:'其他'};
-function cat(c){return CATS[c]||c;}
-function sbadge(s){const m={PENDING:'b-pending 待审核',APPROVED:'b-approved 已通过',REJECTED:'b-rejected 已拒绝'};const[cls,lbl]=(m[s]||'b-pending '+s).split(' ');return`<span class="badge ${cls}">${lbl}</span>`;}
+function openM(id) { document.getElementById(id).classList.add('open'); }
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+function esc(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = String(t); return d.innerHTML; }
+function fmt(s) { if (!s) return '—'; const d = new Date(s), p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+const CATS = {item:'物品',weapon:'武器',avatar:'角色',quest:'任务',scene:'场景',other:'其他'};
+function cat(c) { return CATS[c] || c; }
+function sbadge(s) {
+    const m = {PENDING:'b-pending 待审核', APPROVED:'b-approved 已通过', REJECTED:'b-rejected 已拒绝'};
+    const [cls, lbl] = (m[s] || 'b-pending ' + s).split(' ');
+    return `<span class="badge ${cls}">${lbl}</span>`;
+}
 
-async function api(path,body={}){
-    const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':T},body:JSON.stringify({adminToken:T,...body})});
+async function api(path, body={}) {
+    const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json','X-Admin-Token':T}, body: JSON.stringify({adminToken:T,...body})});
     return r.json();
 }
 
-// ── Init ───────────────────────────────────────────────────────────
-async function init(){
-    T=prompt('请输入管理员 Token (adminToken):');
-    if(!T||!T.trim()){document.querySelector('.page').innerHTML='<div class="empty" style="margin-top:80px"><div class="empty-icon">🔐</div>需要管理员认证，请刷新页面重试</div>';return;}
-    T=T.trim();
-    await Promise.all([loadStats(),loadPending()]);
+async function init() {
+    T = prompt('请输入管理员 Token（对应 config.json 中的 grasscutter.adminToken）:');
+    if (!T || !T.trim()) {
+        document.querySelector('.page').innerHTML = `
+            <div class="empty" style="margin-top:80px">
+                <div class="empty-icon">🔐</div>
+                <div style="font-size:16px;font-weight:600;color:#333;margin-bottom:8px">需要管理员认证</div>
+                <div style="font-size:13px;color:#888;margin-bottom:16px">请刷新页面并输入 adminToken</div>
+                <button onclick="location.reload()" class="btn btn-bl" style="font-size:14px;padding:10px 24px">刷新重试</button>
+            </div>`;
+        return;
+    }
+    T = T.trim();
+
+    // 预检：用 ip-quota/list 验证 Token 是否有效
+    try {
+        const probe = await fetch('/api/admin/ip-quota/list?adminToken=' + encodeURIComponent(T));
+        const pj    = await probe.json();
+        if (!pj.success) {
+            // Token 无效 - 给出提示但仍允许继续（指令接口用不同鉴权）
+            toast('⚠️ IP管理 Token 验证失败：' + (pj.message || '无权限') + '  —  指令管理功能不受影响', false);
+        }
+    } catch(e) { /* 网络错误不阻断初始化 */ }
+
+    await Promise.all([loadStats(), loadPending()]);
 }
 
-// ── Tab switch ─────────────────────────────────────────────────────
-async function switchTab(tab,btn){
-    curTab=tab;
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+async function switchTab(tab, btn) {
+    curTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-    document.getElementById('tab-'+tab).classList.add('active');
-    if(tab==='pending') await loadPending();
-    else if(tab==='all') await loadAll();
-    else if(tab==='ip') await loadIp();
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (tab === 'pending')     await loadPending();
+    else if (tab === 'all')    await loadAll();
+    else if (tab === 'ip')     await loadIp();
 }
 
-// ── Stats ──────────────────────────────────────────────────────────
-async function loadStats(){
-    try{
-        const cmds=await api('/api/commands/admin/all');
-        if(Array.isArray(cmds)){
-            document.getElementById('st-total').textContent=cmds.length;
-            document.getElementById('st-pending').textContent=cmds.filter(c=>c.reviewStatus==='PENDING').length;
-            document.getElementById('st-approved').textContent=cmds.filter(c=>c.reviewStatus==='APPROVED').length;
-            document.getElementById('st-rejected').textContent=cmds.filter(c=>c.reviewStatus==='REJECTED').length;
+async function loadStats() {
+    try {
+        const cmds = await api('/api/commands/admin/all');
+        if (Array.isArray(cmds)) {
+            document.getElementById('st-total').textContent    = cmds.length;
+            document.getElementById('st-pending').textContent  = cmds.filter(c => c.reviewStatus==='PENDING').length;
+            document.getElementById('st-approved').textContent = cmds.filter(c => c.reviewStatus==='APPROVED').length;
+            document.getElementById('st-rejected').textContent = cmds.filter(c => c.reviewStatus==='REJECTED').length;
         }
-    }catch(e){}
-    try{
-        const r=await fetch(`/api/admin/ip-quota/list?adminToken=${encodeURIComponent(T)}`);
-        const j=await r.json();
-        if(j.success&&j.data){
-            document.getElementById('st-ips').textContent=j.data.length;
-            document.getElementById('st-accs').textContent=j.data.reduce((s,x)=>s+x.used,0);
+    } catch(e) {}
+    try {
+        const r = await fetch(`/api/admin/ip-quota/list?adminToken=${encodeURIComponent(T)}`);
+        const j = await r.json();
+        if (j.success && j.data) {
+            document.getElementById('st-ips').textContent  = j.data.length;
+            document.getElementById('st-accs').textContent = j.data.reduce((s,x) => s + x.used, 0);
         }
-    }catch(e){}
+    } catch(e) {}
 }
 
-// ── Command helpers ────────────────────────────────────────────────
-function renderCmdTable(cmds,showStatus){
-    if(!cmds.length)return'<div class="empty"><div class="empty-icon">📭</div>暂无数据</div>';
-    const rows=cmds.map(c=>{
-        const ops=showStatus
-            ?`<td>${sbadge(c.reviewStatus)}</td><td class="mono">${c.likes}</td><td class="mono">${c.views}</td>`
-            :`<td><button class="btn btn-gr" onclick="openReview('${c.id}','approve','${c.category}')">通过</button>
-               <button class="btn btn-yw" onclick="openReview('${c.id}','reject','${c.category}')">拒绝</button></td>`;
-        return`<tr><td>${esc(c.title)}</td><td>${cat(c.category)}</td><td class="mono">${esc(c.uploaderName||'匿名')}</td>
+function renderCmdTable(cmds, showStatus) {
+    if (!cmds.length) return '<div class="empty"><div class="empty-icon">📭</div>暂无数据</div>';
+    const rows = cmds.map(c => {
+        const ops = showStatus
+            ? `<td>${sbadge(c.reviewStatus)}</td><td class="mono">${c.likes}</td><td class="mono">${c.views}</td>`
+            : `<td><button class="btn btn-gr" onclick="openReview('${c.id}','approve','${c.category}')">通过</button>
+                   <button class="btn btn-yw" onclick="openReview('${c.id}','reject','${c.category}')">拒绝</button></td>`;
+        return `<tr><td>${esc(c.title)}</td><td>${cat(c.category)}</td><td class="mono">${esc(c.uploaderName||'匿名')}</td>
             ${ops}
-            <td class="mono" style="font-size:11px;color:var(--tx2)">${fmt(c.uploadTime)}</td>
+            <td class="mono" style="font-size:11px;color:#aaa">${fmt(c.uploadTime)}</td>
             <td><button class="btn btn-bl" onclick="viewCmd('${c.id}')">详情</button>
                 <button class="btn btn-rd" onclick="delCmd('${c.id}')">删除</button></td></tr>`;
     }).join('');
-    const sHead=showStatus?'<th>状态</th><th>点赞</th><th>浏览</th>':'<th>审核</th>';
-    return`<div style="overflow-x:auto"><table class="tbl"><thead><tr>
-        <th>标题</th><th>分类</th><th>上传者</th>${sHead}
-        <th>时间</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    const sHead = showStatus ? '<th>状态</th><th>点赞</th><th>浏览</th>' : '<th>审核</th>';
+    return `<div style="overflow-x:auto"><table class="tbl"><thead><tr>
+        <th>标题</th><th>分类</th><th>上传者</th>${sHead}<th>时间</th><th>操作</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-async function loadPending(){
-    const el=document.getElementById('list-pending');
-    el.innerHTML='<div class="empty"><div class="spin"></div>加载中…</div>';
-    try{const d=await api('/api/commands/admin/pending');el.innerHTML=Array.isArray(d)?renderCmdTable(d,false):'<div class="empty"><div class="empty-icon">❌</div>加载失败</div>';}
-    catch(e){el.innerHTML=`<div class="empty"><div class="empty-icon">❌</div>${e.message}</div>`;}
+async function loadPending() {
+    const el = document.getElementById('list-pending');
+    el.innerHTML = '<div class="empty"><div class="spin"></div>加载中…</div>';
+    try { const d = await api('/api/commands/admin/pending'); el.innerHTML = Array.isArray(d) ? renderCmdTable(d, false) : '<div class="empty"><div class="empty-icon">❌</div>加载失败</div>'; }
+    catch(e) { el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div>${e.message}</div>`; }
 }
-async function loadAll(){
-    const el=document.getElementById('list-all');
-    el.innerHTML='<div class="empty"><div class="spin"></div>加载中…</div>';
-    try{const d=await api('/api/commands/admin/all');el.innerHTML=Array.isArray(d)?renderCmdTable(d,true):'<div class="empty"><div class="empty-icon">❌</div>加载失败</div>';}
-    catch(e){el.innerHTML=`<div class="empty"><div class="empty-icon">❌</div>${e.message}</div>`;}
+async function loadAll() {
+    const el = document.getElementById('list-all');
+    el.innerHTML = '<div class="empty"><div class="spin"></div>加载中…</div>';
+    try { const d = await api('/api/commands/admin/all'); el.innerHTML = Array.isArray(d) ? renderCmdTable(d, true) : '<div class="empty"><div class="empty-icon">❌</div>加载失败</div>'; }
+    catch(e) { el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div>${e.message}</div>`; }
 }
-async function viewCmd(id){
-    try{
-        const cmds=await api('/api/commands/admin/all');
-        if(!Array.isArray(cmds))return;
-        const c=cmds.find(x=>String(x.id)===String(id));
-        if(!c){toast('指令不存在',false);return;}
-        document.getElementById('m-view-body').innerHTML=`
+async function viewCmd(id) {
+    try {
+        const cmds = await api('/api/commands/admin/all');
+        if (!Array.isArray(cmds)) return;
+        const c = cmds.find(x => String(x.id) === String(id));
+        if (!c) { toast('指令不存在', false); return; }
+        document.getElementById('m-view-body').innerHTML = `
             <div class="mfield"><label>标题</label><div class="val">${esc(c.title)}</div></div>
             <div class="mfield"><label>描述</label><div class="val">${esc(c.description)}</div></div>
             <div class="mfield"><label>指令内容</label><div class="val">${esc(c.command)}</div></div>
             <div class="mfield"><label>分类</label><div class="val">${cat(c.category)}</div></div>
             <div class="mfield"><label>上传者</label><div class="val">${esc(c.uploaderName||'匿名')}</div></div>
             <div class="mfield"><label>状态</label><div class="val">${sbadge(c.reviewStatus)}</div></div>
-            ${c.reviewNote?`<div class="mfield"><label>审核备注</label><div class="val">${esc(c.reviewNote)}</div></div>`:''}
+            ${c.reviewNote ? `<div class="mfield"><label>审核备注</label><div class="val">${esc(c.reviewNote)}</div></div>` : ''}
             <div class="mfield"><label>统计</label><div class="val">点赞 ${c.likes} · 浏览 ${c.views}</div></div>
             <div class="mfield"><label>时间</label><div class="val">${fmt(c.uploadTime)}</div></div>`;
         openM('m-view');
-    }catch(e){toast('加载失败：'+e.message,false);}
+    } catch(e) { toast('加载失败：' + e.message, false); }
 }
-function openReview(id,act,category){
-    rId=id;rAct=act;
-    document.getElementById('review-title').textContent=act==='approve'?'✅ 通过审核':'❌ 拒绝审核';
-    document.getElementById('r-confirm').className='btn '+(act==='approve'?'btn-gr':'btn-rd');
-    document.getElementById('r-note').value='';
-    if(category)document.getElementById('r-cat').value=category;
+function openReview(id, act, category) {
+    rId = id; rAct = act;
+    document.getElementById('review-title').textContent = act === 'approve' ? '✅ 通过审核' : '❌ 拒绝审核';
+    document.getElementById('r-confirm').className = 'btn ' + (act === 'approve' ? 'btn-gr' : 'btn-rd');
+    document.getElementById('r-note').value = '';
+    if (category) document.getElementById('r-cat').value = category;
     openM('m-review');
 }
-async function doReview(){
-    if(!rId||!rAct)return;
-    const note=document.getElementById('r-note').value.trim();
-    const category=document.getElementById('r-cat').value;
-    try{
-        const r=await api(`/api/commands/admin/${rId}/${rAct==='approve'?'approve':'reject'}`,{reviewNote:note,category});
-        if(r.success){toast('审核成功');closeM('m-review');await loadStats();await loadPending();}
-        else toast(r.message||'审核失败',false);
-    }catch(e){toast('请求失败：'+e.message,false);}
+async function doReview() {
+    if (!rId || !rAct) return;
+    const note = document.getElementById('r-note').value.trim();
+    const category = document.getElementById('r-cat').value;
+    try {
+        const r = await api(`/api/commands/admin/${rId}/${rAct === 'approve' ? 'approve' : 'reject'}`, {reviewNote: note, category});
+        if (r.success) { toast('审核成功'); closeM('m-review'); await loadStats(); await loadPending(); }
+        else toast(r.message || '审核失败', false);
+    } catch(e) { toast('请求失败：' + e.message, false); }
 }
-async function delCmd(id){
-    if(!confirm('确定要删除这条指令吗？此操作不可恢复！'))return;
-    try{
-        const r=await api(`/api/commands/admin/${id}/delete`);
-        if(r.success){toast('删除成功');await loadStats();curTab==='pending'?await loadPending():await loadAll();}
-        else toast(r.message||'删除失败',false);
-    }catch(e){toast('请求失败：'+e.message,false);}
+async function delCmd(id) {
+    if (!confirm('确定要删除这条指令吗？此操作不可恢复！')) return;
+    try {
+        const r = await api(`/api/commands/admin/${id}/delete`);
+        if (r.success) { toast('删除成功'); await loadStats(); curTab === 'pending' ? await loadPending() : await loadAll(); }
+        else toast(r.message || '删除失败', false);
+    } catch(e) { toast('请求失败：' + e.message, false); }
 }
 
-// ── IP Quota ───────────────────────────────────────────────────────
-async function loadIp(){
-    const el=document.getElementById('list-ip');
-    el.innerHTML='<div class="empty"><div class="spin"></div>加载中…</div>';
-    try{
-        const r=await fetch(`/api/admin/ip-quota/list?adminToken=${encodeURIComponent(T)}`);
-        const j=await r.json();
-        if(!j.success){el.innerHTML=`<div class="empty"><div class="empty-icon">❌</div>${esc(j.message)}</div>`;return;}
-        ipData=j.data||[];
+// ── IP 管理 ────────────────────────────────────────────────
+async function loadIp() {
+    const el = document.getElementById('list-ip');
+    el.innerHTML = '<div class="empty"><div class="spin"></div>加载中…</div>';
+    try {
+        const r = await fetch(`/api/admin/ip-quota/list?adminToken=${encodeURIComponent(T)}`);
+        const j = await r.json();
+        if (!j.success) {
+            const isAuth = j.message && (j.message.includes('权限') || j.message.includes('Token') || j.message.includes('token'));
+            el.innerHTML = `<div class="empty">
+                <div class="empty-icon">${isAuth ? '🔐' : '❌'}</div>
+                <div style="font-size:15px;font-weight:600;color:#333;margin-bottom:8px">${isAuth ? 'Token 验证失败' : '加载失败'}</div>
+                <div style="font-size:13px;color:#888;max-width:380px;margin:0 auto;line-height:1.6">${esc(j.message)}</div>
+                ${isAuth ? `<div style="margin-top:14px;font-size:12px;color:#aaa;line-height:1.7">
+                    请检查：<br>
+                    1. <code style="background:rgba(102,126,234,0.1);padding:1px 6px;border-radius:4px">config.json</code> 中 <code style="background:rgba(102,126,234,0.1);padding:1px 6px;border-radius:4px">grasscutter.adminToken</code> 已设置<br>
+                    2. 刷新页面时输入的 Token 与 config.json 一致
+                </div>` : ''}
+            </div>`;
+            return;
+        }
+        ipData = j.data || [];
         renderIp(ipData);
-    }catch(e){el.innerHTML=`<div class="empty"><div class="empty-icon">❌</div>${e.message}</div>`;}
+    } catch(e) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><div style="color:#888">${e.message}</div></div>`;
+    }
 }
-function filterIp(){
-    const q=document.getElementById('ip-search').value.toLowerCase().trim();
-    renderIp(q?ipData.filter(r=>r.ip.toLowerCase().includes(q)||(r.accounts||[]).some(a=>a.username.toLowerCase().includes(q))):ipData);
+function filterIp() {
+    const q = document.getElementById('ip-search').value.toLowerCase().trim();
+    renderIp(q ? ipData.filter(r => r.ip.toLowerCase().includes(q) || (r.accounts||[]).some(a => a.username.toLowerCase().includes(q))) : ipData);
 }
-function renderIp(data){
-    const el=document.getElementById('list-ip');
-    if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">🌐</div>暂无注册记录</div>';return;}
-    const rows=data.map(row=>{
-        const pct=Math.min(100,Math.round((row.used/3)*100));
-        const accsHtml=(row.accounts||[]).map(a=>`
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-                <div style="display:flex;align-items:center;gap:7px;">
-                    <span class="acc-chip" style="margin:0">${esc(a.username)}</span>
-                    <span style="font-size:11px;color:var(--tx2);font-family:'JetBrains Mono',monospace;">${fmt(a.createdAt)}</span>
+function renderIp(data) {
+    const el = document.getElementById('list-ip');
+    if (!data.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🌐</div>暂无注册记录</div>'; return; }
+    const rows = data.map(row => {
+        const pct = Math.min(100, Math.round((row.used / 3) * 100));
+        const accsHtml = (row.accounts || []).map(a => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="acc-chip">${esc(a.username)}</span>
+                    <span style="font-size:11px;color:#aaa;font-family:monospace">${fmt(a.createdAt)}</span>
                 </div>
                 <span class="chip-del" title="删除此账号记录" onclick="delRecord(${a.id},'${esc(row.ip)}')">×</span>
             </div>`).join('');
         const accsCell = accsHtml
-            ? `<div style="min-width:260px">${accsHtml}</div>`
-            : '<span style="color:var(--tx2);font-size:12px;">—</span>';
-        return`<tr>
-            <td class="mono" style="color:var(--gold-l);white-space:nowrap">${esc(row.ip)}</td>
+            ? `<div style="min-width:280px">${accsHtml}</div>`
+            : '<span style="color:#ccc;font-size:12px;">—</span>';
+        return `<tr>
+            <td class="mono" style="color:#667eea;font-weight:700;white-space:nowrap">${esc(row.ip)}</td>
             <td><div class="qbar-wrap">
-                <div class="qbar"><div class="qbar-fill${row.used>=3?' full':''}" style="width:${pct}%"></div></div>
+                <div class="qbar"><div class="qbar-fill${row.used >= 3 ? ' full' : ''}" style="width:${pct}%"></div></div>
                 <span class="qbar-num">${row.used} / 3</span>
             </div></td>
             <td>${accsCell}</td>
@@ -422,56 +511,56 @@ function renderIp(data){
                 <button class="btn btn-rd" onclick="quickReset('${esc(row.ip)}')">清零</button>
             </td></tr>`;
     }).join('');
-    el.innerHTML=`<div style="overflow-x:auto"><table class="tbl"><thead><tr>
+    el.innerHTML = `<div style="overflow-x:auto"><table class="tbl"><thead><tr>
         <th>IP 地址</th><th style="min-width:140px">配额</th><th>已注册账号（账号名 · 注册时间）</th><th>操作</th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
-function openIpEdit(ip,cur){
-    curIp=ip;
-    document.getElementById('ip-edit-addr').textContent=ip;
-    document.getElementById('ip-edit-cur').textContent=cur+' / 3';
-    document.getElementById('ip-edit-val').value=cur;
+function openIpEdit(ip, cur) {
+    curIp = ip;
+    document.getElementById('ip-edit-addr').textContent = ip;
+    document.getElementById('ip-edit-cur').textContent  = cur + ' / 3';
+    document.getElementById('ip-edit-val').value = cur;
     openM('m-ip');
 }
-async function doSaveIp(){
-    const count=parseInt(document.getElementById('ip-edit-val').value,10);
-    if(isNaN(count)||count<0||count>99){toast('请输入 0~99 之间的整数',false);return;}
-    try{
-        const r=await fetch('/api/admin/ip-quota/set',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':T},body:JSON.stringify({adminToken:T,ip:curIp,count})});
-        const j=await r.json();
-        if(j.success){toast(`IP ${curIp} 配额已设为 ${count}`);closeM('m-ip');await loadStats();await loadIp();}
-        else toast(j.message||'操作失败',false);
-    }catch(e){toast('请求失败：'+e.message,false);}
+async function doSaveIp() {
+    const count = parseInt(document.getElementById('ip-edit-val').value, 10);
+    if (isNaN(count) || count < 0 || count > 99) { toast('请输入 0~99 之间的整数', false); return; }
+    try {
+        const r = await fetch('/api/admin/ip-quota/set', {method:'POST', headers:{'Content-Type':'application/json','X-Admin-Token':T}, body: JSON.stringify({adminToken:T, ip:curIp, count})});
+        const j = await r.json();
+        if (j.success) { toast(`IP ${curIp} 配额已设为 ${count}`); closeM('m-ip'); await loadStats(); await loadIp(); }
+        else toast(j.message || '操作失败', false);
+    } catch(e) { toast('请求失败：' + e.message, false); }
 }
-async function doResetIp(){
-    if(!confirm(`确定清零 IP ${curIp} 的所有注册记录？`))return;
-    try{
-        const r=await fetch('/api/admin/ip-quota/reset',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':T},body:JSON.stringify({adminToken:T,ip:curIp})});
-        const j=await r.json();
-        if(j.success){toast(j.message);closeM('m-ip');await loadStats();await loadIp();}
-        else toast(j.message||'操作失败',false);
-    }catch(e){toast('请求失败：'+e.message,false);}
+async function doResetIp() {
+    if (!confirm(`确定清零 IP ${curIp} 的所有注册记录？`)) return;
+    try {
+        const r = await fetch('/api/admin/ip-quota/reset', {method:'POST', headers:{'Content-Type':'application/json','X-Admin-Token':T}, body: JSON.stringify({adminToken:T, ip:curIp})});
+        const j = await r.json();
+        if (j.success) { toast(j.message); closeM('m-ip'); await loadStats(); await loadIp(); }
+        else toast(j.message || '操作失败', false);
+    } catch(e) { toast('请求失败：' + e.message, false); }
 }
-async function quickReset(ip){
-    if(!confirm(`确定清零 IP ${ip} 的所有注册记录？`))return;
-    try{
-        const r=await fetch('/api/admin/ip-quota/reset',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':T},body:JSON.stringify({adminToken:T,ip})});
-        const j=await r.json();
-        if(j.success){toast(j.message);await loadStats();await loadIp();}
-        else toast(j.message||'操作失败',false);
-    }catch(e){toast('请求失败：'+e.message,false);}
+async function quickReset(ip) {
+    if (!confirm(`确定清零 IP ${ip} 的所有注册记录？`)) return;
+    try {
+        const r = await fetch('/api/admin/ip-quota/reset', {method:'POST', headers:{'Content-Type':'application/json','X-Admin-Token':T}, body: JSON.stringify({adminToken:T, ip})});
+        const j = await r.json();
+        if (j.success) { toast(j.message); await loadStats(); await loadIp(); }
+        else toast(j.message || '操作失败', false);
+    } catch(e) { toast('请求失败：' + e.message, false); }
 }
-async function delRecord(id,ip){
-    if(!confirm(`删除 IP ${ip} 下的这条账号记录？`))return;
-    try{
-        const r=await fetch('/api/admin/ip-quota/delete-record',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':T},body:JSON.stringify({adminToken:T,id})});
-        const j=await r.json();
-        if(j.success){toast('记录已删除');await loadStats();await loadIp();}
-        else toast(j.message||'删除失败',false);
-    }catch(e){toast('请求失败：'+e.message,false);}
+async function delRecord(id, ip) {
+    if (!confirm(`删除 IP ${ip} 下的这条账号记录？`)) return;
+    try {
+        const r = await fetch('/api/admin/ip-quota/delete-record', {method:'POST', headers:{'Content-Type':'application/json','X-Admin-Token':T}, body: JSON.stringify({adminToken:T, id})});
+        const j = await r.json();
+        if (j.success) { toast('记录已删除'); await loadStats(); await loadIp(); }
+        else toast(j.message || '删除失败', false);
+    } catch(e) { toast('请求失败：' + e.message, false); }
 }
 
-window.onload=init;
+window.onload = init;
 </script>
 </body>
 </html>
