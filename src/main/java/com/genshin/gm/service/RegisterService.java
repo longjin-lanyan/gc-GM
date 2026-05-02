@@ -27,7 +27,7 @@ public class RegisterService {
     private static final int MAX_ACCOUNTS_PER_IP = 3;
 
     /** 用户名规则：3-20位字母数字下划线 */
-    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,20}$");
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[\\s\\S]{2,}$");
 
     @Autowired
     private IpAccountRecordRepository ipAccountRecordRepository;
@@ -55,11 +55,19 @@ public class RegisterService {
 
         if (!USERNAME_PATTERN.matcher(username).matches()) {
             result.put("success", false);
-            result.put("message", "账号名只能包含字母、数字和下划线，长度3-20位");
+            result.put("message", "账号名至少需要2个字符");
             return result;
         }
 
-        // 2. 检查IP注册限制
+        // 2. 全局查重：同一账号名不允许重复注册
+        if (ipAccountRecordRepository.existsByUsername(username)) {
+            logger.warn("账号名已存在 - IP: {}, 账号: {}", clientIp, username);
+            result.put("success", false);
+            result.put("message", "账号名 " + username + " 已被注册，请换一个名字");
+            return result;
+        }
+
+        // 3. 检查IP注册限制
         long ipCount = ipAccountRecordRepository.countByIpAddress(clientIp);
         if (ipCount >= MAX_ACCOUNTS_PER_IP) {
             logger.warn("IP {} 已达到注册上限 ({}/{})", clientIp, ipCount, MAX_ACCOUNTS_PER_IP);
@@ -72,7 +80,15 @@ public class RegisterService {
             return result;
         }
 
-        // 3. 构造并执行 account create 命令
+        // 4. 检查账号名是否已在本地记录中（防止重复注册）
+        if (ipAccountRecordRepository.existsByUsername(username)) {
+            logger.warn("账号名重复注册 - IP: {}, 账号: {}", clientIp, username);
+            result.put("success", false);
+            result.put("message", "账号名 \"" + username + "\" 已被注册，请换一个名字");
+            return result;
+        }
+
+        // 5. 构造并执行 account create 命令
         String command = "account create " + username;
         String serverUrl = ConfigLoader.getConfig().getGrasscutter().getFullUrl();
         String consoleToken = ConfigLoader.getConfig().getGrasscutter().getConsoleToken();
@@ -90,7 +106,7 @@ public class RegisterService {
                 serverUrl, consoleToken, command, clientIp, "PUBLIC_REGISTER", username
         );
 
-        // 4. 处理 Grasscutter 返回结果
+        // 5. 处理 Grasscutter 返回结果
         if (gcResponse == null) {
             logger.error("Grasscutter返回null - IP: {}, 账号: {}", clientIp, username);
             result.put("success", false);
@@ -109,7 +125,7 @@ public class RegisterService {
         }
 
         if (gcSuccess) {
-            // 5. 记录到IP注册表
+            // 6. 记录到IP注册表
             try {
                 IpAccountRecord record = new IpAccountRecord(clientIp, username);
                 ipAccountRecordRepository.save(record);
