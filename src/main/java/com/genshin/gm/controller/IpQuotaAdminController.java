@@ -267,4 +267,36 @@ public class IpQuotaAdminController {
 
         return ResponseEntity.ok(Map.of("success", true, "message", "记录已删除"));
     }
+
+    // ── 清空所有 IP 注册记录 ────────────────────────────────────────────────
+
+    /**
+     * POST /api/admin/ip-quota/clear-all
+     * Body: { "adminToken": "..." }
+     * 删除 ip_account_records 表中的全部记录，所有 IP 配额归零。
+     */
+    @PostMapping("/clear-all")
+    public ResponseEntity<Map<String, Object>> clearAll(
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+
+        String adminToken = (String) body.get("adminToken");
+        if (!isAdmin(request, adminToken)) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "无权限"));
+        }
+
+        long total = ipAccountRecordRepository.count();
+        ipAccountRecordRepository.deleteAll();
+
+        String adminIp = getClientIp(request);
+        logger.warn("管理员 {} 执行了一键清空所有IP注册记录，共删除 {} 条", adminIp, total);
+        SecurityLogger.logAction(adminIp, "admin", null, "IP_QUOTA_CLEAR_ALL",
+                "清空全部 " + total + " 条IP注册记录");
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "已清空所有 IP 注册记录，共删除 " + total + " 条",
+                "deletedCount", total
+        ));
+    }
 }
